@@ -1,0 +1,18 @@
+.main {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rem;
+
+}
+
+.Label {
+   width: 100px;
+   height: 100px;
+   text-align: center;
+    padding: 10px 0;
+    background-color: seashell;
+    
+    ;
+}

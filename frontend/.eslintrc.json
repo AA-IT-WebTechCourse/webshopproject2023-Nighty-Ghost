@@ -1,0 +1,10 @@
+{
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "next/babel",
+    "next/core-web-vitals",
+    "next",
+    "prettier"
+  ]
+}

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'myapp/mystyle.css' %}  ">
+</head>
+<body>
+<div style="display: flex">
+    {% for color in color_list %}
+    <div style="width:100px; height:200px; border: 1px solid black" >
+        <div style="width:100px; height:150px; background-color: {{color}}"></div>
+        <div style="width:100px; height:50px;text-align: center">{{color}}</div>
+    </div>
+{% empty %}
+    <li>Sorry, no cards in this list.</li>
+{% endfor %}
+ </div>
+
+</body>
+</html>
