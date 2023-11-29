@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Button, Container, Form, Nav, Card } from 'react-bootstrap';
+import { Button, Container, Form, Nav, Card, Row, Col, } from 'react-bootstrap';
 import { FaFacebookF, FaTwitter, FaGoogle, FaGithub } from 'react-icons/fa';
+
 
 function Login_Reg() {
 
@@ -80,7 +81,8 @@ function Login_Reg() {
         </Nav.Item>
       </Nav>
 
-      <Card.Body >
+      <Card className='bg-white my-5 mx-auto' style={{ borderRadius: '1rem', maxWidth: '500px' }}>
+        <Card.Body className='p-5 w-100 d-flex flex-column'>
         {activeTab === 'login' && (
           <Form>
             <div className="mb-4">
@@ -97,10 +99,6 @@ function Login_Reg() {
               <Form.Control type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
             </Form.Group>
 
-            <div className="d-flex justify-content-between mx-4 mb-4">
-              <Form.Check type="checkbox" label="Remember me" />
-              <a href="!#">Forgot password?</a>
-            </div>
 
             <Button variant="dark" className="mb-4 w-100"  onClick={handleLogin}>
               Sign in
@@ -143,6 +141,7 @@ function Login_Reg() {
           </Form>
         )}
       </Card.Body>
+      </Card>
       <div>
         <h2>User info</h2>
         <p>{userinfo}</p>
@@ -163,7 +162,9 @@ function Login_Reg() {
           Get user info
         </button>
       </div>
+
     </Container>
+
   );
 }
 

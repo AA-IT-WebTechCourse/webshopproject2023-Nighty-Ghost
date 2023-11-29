@@ -16,7 +16,11 @@ function UserMenuBar() {
                   },
                   menuItem: {
                     marginRight: '4px',
+                    border:"none"
                     
+                  },
+                  link: {
+                    textDecoration: 'none', 
                   },
                 };
   
@@ -45,8 +49,8 @@ function UserMenuBar() {
  <div style={styles.sermenu} data-pre="UserMenu">
 
       <div style={styles.menuItem} data-var="populateDatabase">
-        <span style={{ margin: '4px', color: 'black' }} className="prl1-sm">
-          <button onClick={handleCreateUsersAndItems}>Populate Database</button>
+        <span style={{ margin: '4px', border:"none"}} className="prl1-sm">
+          <button onClick={handleCreateUsersAndItems} style={{ border:"none"}} >Populate Database</button>
         </span>
         <span className="mr1-sm body-4" data-var="populateDatabaseSeparator">
           |
@@ -72,18 +76,22 @@ function UserMenuBar() {
       </div>
 
       <div style={styles.menuItem} data-var="SignUpButton">
-        <span id="" style={{margin: '4px', color: 'black'}} className="prl1-sm">
-          Sign Up 
-        </span>
+      <a href="http://localhost:8080/signup" style={{ textDecoration: 'none' }}>
+          <span id="" style={{margin: '4px', color: 'black'}} className="prl1-sm">
+            Sign Up 
+          </span> 
+        </a>
         <span className="mr1-sm body-4" data-var="SignUpButtonSeparator">
           |
         </span>
       </div>
 
       <div style={styles.menuItem} data-var="LoginButton">
-        <span id="" style={{margin: '4px', color: 'black'}} className="prl1-sm">
-          Login 
-        </span>
+        <a href="http://localhost:8080/login" style={{ textDecoration: 'none' }}> 
+          <span id="" style={{margin: '4px', color: 'black'}} className="prl1-sm">
+            Login 
+          </span>
+        </a>
       </div>
     </div>
 

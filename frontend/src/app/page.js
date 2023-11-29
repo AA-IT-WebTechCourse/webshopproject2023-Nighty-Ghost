@@ -1,6 +1,7 @@
 "use client";
 import styles from "./page.module.css";
 import Link from "next/link";
+
 export default function Home() {
   return (
     <main className={styles.main}>
@@ -9,6 +10,7 @@ export default function Home() {
         <li>
           <Link href="./l6">Lecture 6</Link>
           <Link href="./login">Login</Link>
+          <Link href="./register">Login</Link>
         </li>
       </menu>
     </main>
