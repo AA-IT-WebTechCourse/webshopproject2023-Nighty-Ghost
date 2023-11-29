@@ -91,7 +91,7 @@ export default function Home() {
             marginBottom:"100px",
             width: '80%',
           }}>
-            <h1>Lecture 6</h1>
+            <h1>Home</h1>
 
             <div style={{ display: "flex", flexDirection: "column" }}>
               <div

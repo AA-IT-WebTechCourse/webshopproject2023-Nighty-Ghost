@@ -8,7 +8,19 @@ from .serializers import CartSerializer,ItemSerializer
 from .models import CartModel, Item
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets
+from django.contrib.auth import authenticate, login
+from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import status
+from rest_framework import authentication, permissions
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
+
+# @authentication_classes([JWTAuthentication])
+# @permission_classes([IsAuthenticated])
+# def protected_view(request):
+#     # protected view logic here
 
 class CartView(viewsets.ModelViewSet):
     queryset = CartModel.objects.all()
@@ -18,7 +30,32 @@ class ItemView(viewsets.ModelViewSet):
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
 
+class AboutMeView(APIView):
+    authentication_classes = [authentication.SessionAuthentication, JWTAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
 
+    def get(self, request):
+        return Response(f"you are: {request.user.get_username()}")
+
+
+class SessionAboutMeView(AboutMeView):
+    authentication_classes = [authentication.SessionAuthentication]
+
+def login(request):
+    
+    username = request.data.get('username')
+    password = request.data.get('password')
+    user = authenticate(request, username=username, password=password)
+
+    if user is not None:
+        login(request, user)
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+        })
+    else:
+        return Response({'error': 'Invalid credentials. Please try again.'}, status=status.HTTP_401_UNAUTHORIZED)
 
 def hello(request):
     return HttpResponse("Hello")

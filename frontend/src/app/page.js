@@ -8,6 +8,7 @@ export default function Home() {
       <menu>
         <li>
           <Link href="./l6">Lecture 6</Link>
+          <Link href="./login">Login</Link>
         </li>
       </menu>
     </main>
