@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Container, Form, Nav, Card, Row, Col, } from 'react-bootstrap';
 import { FaFacebookF, FaTwitter, FaGoogle, FaGithub } from 'react-icons/fa';
-
+import FlashMessage from '../../../components/FlashMessage' 
 
 function Login_Reg() {
 
@@ -10,6 +10,16 @@ function Login_Reg() {
   const [password, setPassword] = useState('');
   const [userinfo, setUserinfo] = useState("not logged in");
   const [activeTab, setActiveTab] = useState('login');
+
+  const [flashMessage, setFlashMessage] = useState(null);
+
+  const showFlashMessage = (message, type) => {
+    setFlashMessage({ message, type });
+  };
+
+  const closeFlashMessage = () => {
+    setFlashMessage(null);
+  };
 
   const handleLogin = async () => {
     try {
@@ -31,10 +41,12 @@ function Login_Reg() {
       console.log("Data sent back is : ", data)
       if(response.ok){
         localStorage.setItem(TOKEN_KEY,JSON.stringify(data))
+        showFlashMessage('Logged successfully!', 'success')
       }
 
       if (!response.ok) {
         console.log("Login failed")
+        showFlashMessage('Login failed. Username or Password incorrect', 'error')
         throw new Error('Login failed');
       }
 
@@ -52,38 +64,19 @@ function Login_Reg() {
     return tokens
   }
 
-  const handleTabClick = (tab) => {
-    if (tab === activeTab) {
-      return;
-    }
-    setActiveTab(tab);
-  };
+ 
 
   return (
     <Container className="p-3 my-5 d-flex flex-column w-50">
-      <Nav fill variant="pills" className="mb-3 d-flex flex-row justify-content-between">
-        <Nav.Item >
-          <Nav.Link  onClick={() => handleTabClick('login')} active={activeTab === 'login'}           style={{
-            backgroundColor: activeTab === 'login' ? '#000000' : '',
-            color: activeTab === 'login' ? '#ffffff' : '',
-          }}>
-            Login
-          </Nav.Link>
-        </Nav.Item>
-        <Nav.Item>
-          <Nav.Link  onClick={() => handleTabClick('register')} active={activeTab === 'register'}           
-            style={{
-            backgroundColor: activeTab === 'register' ? '#000000' : '',
-            color: activeTab === 'register' ? '#ffffff' : '',
-            }}>
-            Register
-          </Nav.Link>
-        </Nav.Item>
-      </Nav>
-
-      <Card className='bg-white my-5 mx-auto' style={{ borderRadius: '1rem', maxWidth: '500px' }}>
+      {flashMessage && (
+        <FlashMessage
+          message={flashMessage.message}
+          type={flashMessage.type}
+          onClose={closeFlashMessage}
+        />
+      )}
+      <Card className='bg-white my-5 mx-auto' style={{ borderRadius: '1rem', maxWidth: '500px', boxShadow: ' 2px 2px 13px 13px #D3D3D3',}}>
         <Card.Body className='p-5 w-100 d-flex flex-column'>
-        {activeTab === 'login' && (
           <Form>
             <div className="mb-4">
               <FaFacebookF className="m-1" />
@@ -104,42 +97,9 @@ function Login_Reg() {
               Sign in
             </Button>
             <p className="text-center">
-              Not a member? Please Register
+              Not a member? Please <a href='http://localhost:8080/register' style={{ textDecoration: 'none' }}> register</a>
             </p>
           </Form>
-        )}
-
-        {activeTab === 'register' && (
-          <Form>
-            <div className="mb-4">
-              <FaFacebookF className="m-1" />
-              <FaTwitter className="m-1" />
-              <FaGoogle className="m-1" />
-              <FaGithub className="m-1" />
-            </div>
-
-            <Form.Group className="mb-4">
-              <Form.Control type="text" placeholder="Name" />
-            </Form.Group>
-            <Form.Group className="mb-4">
-              <Form.Control type="text" placeholder="Username" />
-            </Form.Group>
-            <Form.Group className="mb-4">
-              <Form.Control type="email" placeholder="Email" />
-            </Form.Group>
-            <Form.Group className="mb-4">
-              <Form.Control type="password" placeholder="Password" />
-            </Form.Group>
-
-            <div className="d-flex justify-content-center mb-4">
-              <Form.Check type="checkbox" label="I have read and agree to the terms" />
-            </div>
-
-            <Button variant="dark" className="mb-4 w-100">
-              Sign up
-            </Button>
-          </Form>
-        )}
       </Card.Body>
       </Card>
       <div>

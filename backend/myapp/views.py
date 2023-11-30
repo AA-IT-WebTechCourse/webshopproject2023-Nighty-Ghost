@@ -1,10 +1,11 @@
+from django.db import IntegrityError
 from django.shortcuts import render
 from django.http import HttpResponse,JsonResponse, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.contrib.auth.models import User
-from .serializers import CartSerializer,ItemSerializer
+from .serializers import CartSerializer,ItemSerializer, RegisterSerializer
 from .models import CartModel, Item
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets
@@ -21,6 +22,31 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 # @permission_classes([IsAuthenticated])
 # def protected_view(request):
 #     # protected view logic here
+
+class RegisterView(APIView):
+    """
+    Register a new user
+    """
+
+    serializer_class = RegisterSerializer
+
+    def post(self, request, format=None):
+        print(request.data)
+        serializer = self.serializer_class(data=request.data)
+        print("Serializer ",serializer, "\n Is valid: ", serializer.is_valid() )
+        if not serializer.is_valid():
+            return Response("not valid", status=400)
+        try:
+            user = User.objects.create_user(
+                username=serializer.data["username"],
+                email=serializer.data["email"],
+                password=serializer.data["password"],
+            )
+        except IntegrityError:
+            return Response(f"same user name", status=400)
+        if user is not None:
+            return Response(f"new user is: {user.get_username()}")
+        return Response("no new user")
 
 class CartView(viewsets.ModelViewSet):
     queryset = CartModel.objects.all()

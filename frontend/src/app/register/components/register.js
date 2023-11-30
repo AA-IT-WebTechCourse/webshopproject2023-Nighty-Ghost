@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Container, Form, Nav, Card, Row, Col, } from 'react-bootstrap';
 import { FaFacebookF, FaTwitter, FaGoogle, FaGithub } from 'react-icons/fa';
+import FlashMessage from '../../../components/FlashMessage' 
 
 
 function Reg() {
@@ -12,6 +13,16 @@ function Reg() {
 
   const [info, setInfo] = useState("");
 
+  const [flashMessage, setFlashMessage] = useState(null);
+
+  const showFlashMessage = (message, type) => {
+    setFlashMessage({ message, type });
+  };
+
+  const closeFlashMessage = () => {
+    setFlashMessage(null);
+  };
+
   const handleRegister = async () => {
     const res = await fetch("/api/register/", {
       headers: {
@@ -22,8 +33,19 @@ function Reg() {
     });
     
     const data = await res.json()
-    console.log(data)
-    setInfo(JSON.stringify(data))
+    
+    if(res.ok){
+      localStorage.setItem(TOKEN_KEY,JSON.stringify(data))
+      showFlashMessage('Register successful!', 'success')
+      console.log(data)
+      setInfo(JSON.stringify(data))
+    }
+    if (!res.ok) {
+      console.log("Register failed")
+      showFlashMessage('Register failed. Username must not contain special characters and be unique', 'error')
+      throw new Error('Login failed');
+    }
+    
   }
 
   const getToken = () => {
@@ -36,8 +58,14 @@ function Reg() {
   return (
     <Container className="p-3 my-5 d-flex flex-column w-50">
   
-
-      <Card className='bg-white my-5 mx-auto' style={{ borderRadius: '1rem', maxWidth: '500px' }}>
+    {flashMessage && (
+          <FlashMessage
+            message={flashMessage.message}
+            type={flashMessage.type}
+            onClose={closeFlashMessage}
+          />
+        )}
+      <Card className='bg-white my-5 mx-auto' style={{ borderRadius: '1rem', maxWidth: '500px', boxShadow: ' 2px 2px 13px 13px #D3D3D3' }}>
         <Card.Body className='p-5 w-100 d-flex flex-column'>
 
         <Form>
