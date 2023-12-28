@@ -6,13 +6,13 @@ export default function Card(props) {
     width: "100px",
     height: "200px",
     padding: "0",
-    margin: "10px",
+    margin: "40px",
     filter: "drop-shadow(0px 0px 5px #666)",
   };
-  console.log("[Debug function Card]")
-  console.log(props)
+  // console.log("[Debug function Card]")
+  // console.log(props)
   
-  console.log("[End debug Card]")
+  // console.log("[End debug Card]")
   return (
     <div style={cStyle} onClick={() => props.clickHandler(props.item)}>
       {/*<Square sColor={props.cColor} />*/}

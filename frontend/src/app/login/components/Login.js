@@ -1,7 +1,20 @@
 import React, { useState } from 'react';
 import { Button, Container, Form, Nav, Card, Row, Col, } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import { Navigate } from "react-router-dom";
 import { FaFacebookF, FaTwitter, FaGoogle, FaGithub } from 'react-icons/fa';
 import FlashMessage from '../../../components/FlashMessage' 
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { redirect } from "react-router-dom";
+import Home from '../../shop/page';
+
+function PageRedirection() {
+  return (
+    <Routes>
+      <Route path="/shop" element={<Home />} />
+    </Routes>
+  );
+}
 
 function Login_Reg() {
 
@@ -40,8 +53,18 @@ function Login_Reg() {
       console.log("Response for loggin is : ", response)
       console.log("Data sent back is : ", data)
       if(response.ok){
+        
         localStorage.setItem(TOKEN_KEY,JSON.stringify(data))
         showFlashMessage('Logged successfully!', 'success')
+        // const navigate = useNavigate();
+        // setTimeout(() => {
+        //   navigate('/shop');
+        // }, 1000);
+        // const timeout = setTimeout(() => {
+        //   // 👇️ redirects to an external URL
+        //   window.location.replace('http://localhost:8080/shop');
+        // }, 1000);
+        
       }
 
       if (!response.ok) {
@@ -50,12 +73,16 @@ function Login_Reg() {
         throw new Error('Login failed');
       }
 
-      // Handle successful login, e.g., store the token in local storage or state
     } catch (error) {
       console.error('Error during login:', error);
-      // Handle login error, e.g., display an error message to the user
     }
   };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    await handleLogin();
+  };
+
 
   const getToken = () => {
     const value  = localStorage.getItem(TOKEN_KEY)
@@ -77,7 +104,7 @@ function Login_Reg() {
       )}
       <Card className='bg-white my-5 mx-auto' style={{ borderRadius: '1rem', maxWidth: '500px', boxShadow: ' 2px 2px 13px 13px #D3D3D3',}}>
         <Card.Body className='p-5 w-100 d-flex flex-column'>
-          <Form>
+          <Form onSubmit={handleSubmit}>
             <div className="mb-4">
               <FaFacebookF className="m-1" />
               <FaTwitter className="m-1" />
@@ -92,12 +119,13 @@ function Login_Reg() {
               <Form.Control type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
             </Form.Group>
 
-
-            <Button variant="dark" className="mb-4 w-100"  onClick={handleLogin}>
+          
+            <Button variant="dark" className="mb-4 w-100"  onClick={handleLogin} type="submit">
               Sign in
             </Button>
+          
             <p className="text-center">
-              Not a member? Please <a href='http://localhost:8080/register' style={{ textDecoration: 'none' }}> register</a>
+              Not a member? Please <a href='http://localhost:8080/signup' style={{ textDecoration: 'none' }}> register</a>
             </p>
           </Form>
       </Card.Body>

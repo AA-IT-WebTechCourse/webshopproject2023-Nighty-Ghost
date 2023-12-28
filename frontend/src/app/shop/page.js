@@ -1,13 +1,14 @@
 "use client";
 
 import styles from "@/app/page.module.css";
-import Card from "./components/Card";
+// import Card from "./components/Card";
 import Cart from "./components/Cart";
-import Container from 'react-bootstrap/Container';
-import Nav from 'react-bootstrap/Nav';
+
+
 import Navbar from 'react-bootstrap/Navbar';
 import NvBar from "./components/Navbar";
 import 'bootstrap/dist/css/bootstrap.css';
+import { Button, Container, Form, Nav, Card, Row, Col, } from 'react-bootstrap';
 
 import { useEffect, useState } from "react";
 import UserMenuBar from "./components/UserMenu" 
@@ -48,10 +49,7 @@ export default function Home() {
   };
 
   //get_all_items in db
-  
-
-
-  
+   
     const [items, setItems] = useState([]);
 
     useEffect(() => {
@@ -59,6 +57,8 @@ export default function Home() {
             try {
                 const response = await fetch('api/get_items/');
                 const data = await response.json();
+                console.log(typeof data.items); // Using typeof for a quick check
+                console.log(Object.keys(data.items).length);
                 setItems(data.items);
             } catch (error) {
                 console.error('Error fetching items:', error);
@@ -68,15 +68,41 @@ export default function Home() {
         fetchData();
     }, [])
 
+
+  const divs = [];
+  
+  // for (let i = 0; i < length(); i++) {
+  //   divs.push(<div key={i}>This is div {i + 1}</div>);
+  // }
+
+
+
+
   const colorList = ["red", "blue", "yellow", "black"];
-  const ColorListJSX = items.map((item) => (
-    <Card
-      item={item}
-      //key={key}
-      // a key property is required internally by react to manage the components in the list
-      clickHandler={addCard}
-    />
+  console.log(items)
+  const ColorListJSX = items.map((item, index) => (
+    <div key={index} style={{ backgroundColor: "cyan", height: '50px', marginBottom: '5px', width: 'calc(33.33% - 10px)', boxSizing: 'border-box' }}>
+      item.description
+    </div>
   ));
+  // const ColorListJSX = items.map((item) => (
+
+  //   <Card
+  //     item={item}
+  //     //key={key}
+  //     // a key property is required internally by react to manage the components in the list
+  //     clickHandler={addCard}
+  //   />
+  // ));
+
+  const itemsPerColumn = 4;
+  const columns = [];
+  for (let i = 0; i < ColorListJSX.length; i += itemsPerColumn) {
+    const columnItems = ColorListJSX.slice(i, i + itemsPerColumn);
+    columns.push(<Row key={i}>{columnItems}</Row>);
+  }
+
+
   return (
     <div>
       <UserMenuBar/>
@@ -93,19 +119,17 @@ export default function Home() {
           }}>
             <h1>Home</h1>
 
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <div
-                style={{
-                  display: "flex",
-                  padding: "10px",
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: "10px",
-                  minWidth: "80vw",
-                }}
-              >
-                {ColorListJSX}
-              </div>
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                justifyContent: 'space-between',
+                maxWidth: '1600px',
+                margin: '10px auto', // Center the container
+              }}
+            >
+              {ColorListJSX}
+            </div>
 
               <Cart items={cart} deleteHandler={deleteCard} />
             </div>
@@ -116,6 +140,5 @@ export default function Home() {
 
 
 
-    </div>
   );
 }
