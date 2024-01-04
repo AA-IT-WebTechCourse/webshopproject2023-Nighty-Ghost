@@ -1,4 +1,5 @@
 from django.db import IntegrityError
+from django.db.models import Q
 from django.conf import settings
 from django.shortcuts import render
 from django.http import HttpResponse,JsonResponse, HttpResponseServerError
@@ -83,6 +84,25 @@ def login(request):
         })
     else:
         return Response({'error': 'Invalid credentials. Please try again.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+@csrf_exempt
+def search_item(request):
+    
+    try:
+        request_data = json.loads(request.body.decode('utf-8'))
+
+        search_term = request_data.get('SearchTerm', '')
+        print("[DEBUG]  \n",search_term,"\n")
+
+        items = Item.objects.filter(title__icontains=search_term)
+        serialized_items = ItemSerializer(items, many=True).data
+
+        return JsonResponse({'items': serialized_items})
+    
+    except Exception as e:
+        print("Error detected:\nFunction search_item(request)", e)
+        return HttpResponseServerError({'error': 'Server error occurred'})
+
 
 def hello(request):
     return HttpResponse("Hello")

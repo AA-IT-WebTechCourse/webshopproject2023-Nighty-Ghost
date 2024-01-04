@@ -23,19 +23,15 @@ function UserMenuBar() {
         "Authorization": `Bearer ${tokens.access}`
       }
     });
-    if (!res.ok) {
+     if (res.ok) {
+      setisAuth(true);
+    }
+    else {
       setisAuth(false);
       
-    } else if (res.ok) {
-      setisAuth(true);
-    
     }
   }
   checkAuth()
-
-  
-  
-      
 
   const logout = () => {
      // Remove refresh token from localStorage

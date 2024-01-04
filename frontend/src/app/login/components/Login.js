@@ -60,10 +60,9 @@ function Login_Reg() {
         // setTimeout(() => {
         //   navigate('/shop');
         // }, 1000);
-        // const timeout = setTimeout(() => {
-        //   // 👇️ redirects to an external URL
-        //   window.location.replace('http://localhost:8080/shop');
-        // }, 1000);
+        const timeout = setTimeout(() => {
+          window.location.replace('http://localhost:8080/shop');
+        }, 1000);
         
       }
 

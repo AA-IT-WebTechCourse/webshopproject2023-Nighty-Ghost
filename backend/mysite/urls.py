@@ -14,6 +14,7 @@ urlpatterns = [
     path("great/<str:name>/", views.great),
     path("nicegreat/<str:name>/", views.nicergreat),
     path("cards/<int:count>/", views.cards),
+    path("api/search/", views.search_item),
     path("api/", include(router.urls)),
     path('api/populate_db/', views.populate_db, name='populate_db'),
     path('api/get_items/',views.get_items, name='get_items'),

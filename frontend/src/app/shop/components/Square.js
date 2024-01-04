@@ -1,8 +1,9 @@
 export default function Square(props) {
-  const sStyle = {
-    width: "200px",
-    height: "200px",
+  const squareStyle = {
+    width: "500px",
+    height: "600px",
     backgroundColor: props.sColor,
   };
-  return <div style={sStyle}></div>;
+
+  return <div style={squareStyle}></div>;
 }

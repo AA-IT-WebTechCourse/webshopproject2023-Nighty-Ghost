@@ -92,7 +92,6 @@ export default function Home() {
         
       </Card.Body>
       </Card>
-//ADD HERE LANDING6PAGE HTML
     </Container>
 
   );

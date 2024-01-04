@@ -1,24 +1,30 @@
-import Label from "./Label";
 import Square from "./Square";
+import Label from "./Label";
 
 export default function Card(props) {
-  const cStyle = {
-    width: "100px",
-    height: "200px",
-    padding: "0",
-    margin: "40px",
-    filter: "drop-shadow(0px 0px 5px #666)",
-  };
-  // console.log("[Debug function Card]")
-  // console.log(props)
-  
-  // console.log("[End debug Card]")
-  return (
-    <div style={cStyle} onClick={() => props.clickHandler(props.item)}>
-      {/*<Square sColor={props.cColor} />*/}
-      <Square sColor={"cyan"} />
+  const { title, description, price, img_url, date_added, is_sold, seller_id } = props;
 
-      <Label label_item={props.item} />
+  const cardStyle = {
+    width: "200px",
+    height: "300px",
+    padding: "10px",
+    margin: "40px",
+    border: "1px solid #ccc",
+    borderRadius: "5px",
+    boxShadow: "0px 0px 5px #666",
+    cursor: "pointer",
+  };
+
+  return (
+    <div style={cardStyle} onClick={() => props.clickHandler(props.cColor)}>
+
+      <h3>{title}</h3>
+      <p>{description}</p>
+      <p>Price: ${price}</p>
+      <img src={img_url} alt={title} style={{ maxWidth: "100%", maxHeight: "100px" }} />
+      <p>Date Added: {date_added}</p>
+      <p>{is_sold ? "Sold" : "Available"}</p>
+      <p>Seller ID: {seller_id}</p>
     </div>
   );
 }

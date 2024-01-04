@@ -71,35 +71,51 @@ export default function Home() {
 
   const divs = [];
   
-  // for (let i = 0; i < length(); i++) {
-  //   divs.push(<div key={i}>This is div {i + 1}</div>);
-  // }
 
-
-
-
-  const colorList = ["red", "blue", "yellow", "black"];
   console.log(items)
-  const ColorListJSX = items.map((item, index) => (
-    <div key={index} style={{ backgroundColor: "cyan", height: '50px', marginBottom: '5px', width: 'calc(33.33% - 10px)', boxSizing: 'border-box' }}>
-      item.description
-    </div>
-  ));
-  // const ColorListJSX = items.map((item) => (
 
-  //   <Card
-  //     item={item}
-  //     //key={key}
-  //     // a key property is required internally by react to manage the components in the list
-  //     clickHandler={addCard}
-  //   />
-  // ));
-
+  const cardStyle = {
+    width: "200px",
+    height: "300px",
+    padding: "10px",
+    margin: "20px",
+    border: "1px solid #ccc",
+    borderRadius: "5px",
+    boxShadow: "0px 0px 5px #666",
+    cursor: "pointer",
+    fontSize: "9px"
+    
+  };
+//<p>{item.description}</p>
   const itemsPerColumn = 4;
   const columns = [];
-  for (let i = 0; i < ColorListJSX.length; i += itemsPerColumn) {
-    const columnItems = ColorListJSX.slice(i, i + itemsPerColumn);
-    columns.push(<Row key={i}>{columnItems}</Row>);
+  for (let i = 0; i < items.length; i += itemsPerColumn) {
+    const columnItems = items.slice(i, i + itemsPerColumn);
+    const columnCards = columnItems.map((item, index) => (
+      <div style={cardStyle}>
+      
+      <div style = {{display: 'flex',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                alignItems: 'center',
+}}>
+        <img src={item.img_url} alt={item.title} style={{ maxWidth: "150px", maxHeight: "150px" }} />
+      </div>
+      <Row>
+        <p style={{"fontSize": "11px", margin:"5px"}}> <b>{item.title}</b></p>
+      
+        <p>Price: ${item.price}</p>
+        <p>Date Added: {item.date_added}</p>
+        <p>{item.is_sold ? "Sold" : "Available"}</p>
+        <p>Seller ID: {item.seller_id}</p>
+      </Row>
+    </div>
+    ));
+    columns.push(<Row key={i} >
+
+      {columnCards}
+      
+      </Row>);
   }
 
 
@@ -123,15 +139,16 @@ export default function Home() {
               style={{
                 display: 'flex',
                 flexWrap: 'wrap',
-                justifyContent: 'space-between',
-                maxWidth: '1600px',
-                margin: '10px auto', // Center the container
+                justifyContent: 'center',
+                alignItems: 'center',
+                margin: '10px auto', 
               }}
             >
-              {ColorListJSX}
+              {columns}
             </div>
-
-              <Cart items={cart} deleteHandler={deleteCard} />
+              <Cart  style={{
+                "margin-top": '100px', 
+              }} items={cart} deleteHandler={deleteCard} />
             </div>
 
             <a href="/">Back</a>
