@@ -1,48 +1,103 @@
 "use client";
 import React, { useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import FlashMessage from './../../components/FlashMessage' 
+import UserMenuBar from "../shop/components/UserMenu" 
+import { Route, redirect } from 'react-router-dom';
 
 import { Button, Container, Form, Nav, Card, Row, Col, } from 'react-bootstrap';
 
 const editAccount = () => {
-
-  const [isFocused, setIsFocused] = useState(false);
-
-  const handleFocus = () => {
-    setIsFocused(true);
-  };
-
-  const handleBlur = () => {
-    setIsFocused(false);
-  };
-
-  const inputStyles = {
-    border: 'none',
-    borderBottom: `2px solid ${isFocused ? 'blue' : 'black'}`,
-    outline: 'none',
-    padding: '8px', // Adjust as needed
-    transition: 'border-bottom-color 0.3s ease',
-    width: '100%', // Ensure the input takes full width
-  };
-
-  
-  const TOKEN_KEY = "tokens"
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [userinfo, setUserinfo] = useState("not logged in");
-  const [activeTab, setActiveTab] = useState('login');
+  const [email, setEmail] = useState('');
 
   const [flashMessage, setFlashMessage] = useState(null);
+  const [isAuth, setisAuth] = useState(false);
+
+  const TOKEN_KEY = "tokens"
+  const getToken = () => {
+    const value  = localStorage.getItem(TOKEN_KEY)
+    if(!value) return
+    const tokens = JSON.parse(value)
+    return tokens
+  }
+  const checkAuth = async () => {
+    const tokens = getToken();
+    const res = await fetch("/api/me/",
+    {
+      headers: {
+        "Authorization": `Bearer ${tokens.access}`
+      }
+    });
+     if (res.ok) {
+      setisAuth(true);
+    }
+    else {
+      setisAuth(false);
+    }
+  }
+  checkAuth()
 
   const showFlashMessage = (message, type) => {
-    setFlashMessage({ message, type });
-  };
+        setFlashMessage({ message, type });
+        };
 
   const closeFlashMessage = () => {
     setFlashMessage(null);
   };
+  const updateUserInformation = async () => {
+    const tokens = getToken();
+  
+    // Check if at least one of username, password, or email is not empty
+    if (!username && !password && !email) {
+      // Handle the case when none of the fields are filled
+      return;
+    }
+  
+    const requestBody = {
+      username: username,
+      password: password,
+      email: email,
+    };
+  
+    try {
+      const res = await fetch("/api/me/", {
+        method: "PUT", 
+        headers: {
+          "Authorization": `Bearer ${tokens.access}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+  
+      if (res.ok) {
+        
+        console.log("User information updated successfully");
+        showFlashMessage('Informations updated successfully', 'success')
 
-  const handleLogin = async () => {
+      } else {
+        // Handle the case when the update was not successful
+        console.error("Failed to update user information:", res.statusText);
+        const returned_error = "Failed to update user information:" + " " + String(res.statusText);
+        showFlashMessage(returned_error, 'error')
+      }
+    } catch (error) {
+      
+      const returned_error = "Failed to update user information:" + String(error.message) ;
+      showFlashMessage(returned_error, 'error')
+      console.error("Error updating user information:", error.message);
+    }
+  };
+  
+
+
+
+
+
+
+
+  const todel = async () => {
     try {
       console.log("Submit cliked")
       console.log("Username : ",username)
@@ -87,16 +142,25 @@ const editAccount = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    await handleLogin();
+    await updateUserInformation();
   };
 
 
   
   return (
+    <div> 
+      <UserMenuBar/>
+      
     <Container style={{   
                         marginTop :"70px" 
                       }}>
-
+      {flashMessage && (
+        <FlashMessage
+          message={flashMessage.message}
+          type={flashMessage.type}
+          onClose={closeFlashMessage}
+        />
+      )}
                         
       <div style={{margin:"20px" ,display: "flex", flexDirection: "row" }}>
 
@@ -110,7 +174,7 @@ const editAccount = () => {
                       justifyContent: 'center',
                       marginRight:"20px"}}>
                           <div style={{ display:"flex", flex:"row", position: 'absolute', 
-                                        top:'50px', left:'225px', background:"#929FBA", 
+                                        top:'63px', left:'225px', background:"#929FBA", 
                                         color:"white", width:" 150px", height:"40px", alignItems: 'center', justifyContent: 'center',
                                         fontFamily: 'Arial, sans-serif', 
                                         fontSize: '18px', 
@@ -161,7 +225,7 @@ const editAccount = () => {
                       marginRight:"20px"}}>
 
                 <div style={{ display:"flex", flex:"row", position: 'absolute', 
-                                                        top:'50px', left:'700px', background:"#929FBA", 
+                                                        top:'63px', left:'700px', background:"#929FBA", 
                                                         color:"white", width:" 250px", height:"40px", alignItems: 'center', justifyContent: 'center',
                                                         fontFamily: 'Arial, sans-serif', 
                                                         fontSize: '18px', 
@@ -186,11 +250,11 @@ const editAccount = () => {
             </Form.Group>
 
             <Form.Group className="mb-4">
-              <Form.Control type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Form.Control type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
             </Form.Group>
 
           
-            <Button variant="primary" className="mb-4 w-100"  onClick={handleLogin} type="submit" style = {{marginTop: "30px", width:"20px"}}>
+            <Button variant="primary" className="mb-4 w-100"  onClick={updateUserInformation} type="submit" style = {{marginTop: "30px", width:"20px"}}>
               Apply
             </Button>
           
@@ -202,6 +266,7 @@ const editAccount = () => {
         </div>
       </div>
     </Container>
+    </div>
   );
 };
 

@@ -14,11 +14,8 @@ import UserMenuBar from "../shop/components/UserMenu"
 export default function Log_Register() {
 
   return (
-    <div>
-        <UserMenuBar/>
-        
+    <div>       
         <Login_Reg/>
- 
     </div>
   );
 }

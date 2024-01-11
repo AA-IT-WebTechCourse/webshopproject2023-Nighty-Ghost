@@ -1,40 +1,56 @@
 from django.db import IntegrityError
-from django.db.models import Q
 from django.conf import settings
 from django.shortcuts import render
 from django.http import HttpResponse,JsonResponse, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.contrib.auth.models import User
-from .serializers import CartSerializer,ItemSerializer, RegisterSerializer
-from .models import CartModel, Item
+from .serializers import CartSerializer,ItemSerializer, RegisterSerializer, LoginSerializer
+from .models import CartModel, Item, OrderItems
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets
 from django.contrib.auth import authenticate, login
-from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework import status
-from rest_framework import authentication, permissions
+from rest_framework import authentication, permissions,status
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 import json, os
+from rest_framework.permissions import IsAuthenticated
 
 # @authentication_classes([JWTAuthentication])
 # @permission_classes([IsAuthenticated])
 # def protected_view(request):
 #     # protected view logic here
 
+class LoginView(APIView):
+    """
+    Login a user
+    """
+
+    def post(self, request, format= None):
+        print("DEBUG : ")
+        serializer = LoginSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response("not valid", status=400)
+        user = authenticate(
+            username=serializer.data["username"], password=serializer.data["password"]
+        )
+        if user is not None:
+            login(request, user)
+            print('DEBUG:', " User logged")
+            return Response(f"is logged in: {user.get_username()}")
+        return Response({'error': 'Invalid credentials. Try again or register.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
 class RegisterView(APIView):
     """
     Register a new user
     """
-
     serializer_class = RegisterSerializer
 
     def post(self, request, format=None):
-        print(request.data)
         serializer = self.serializer_class(data=request.data)
+        
         print("Serializer ",serializer, "\n Is valid: ", serializer.is_valid() )
         if not serializer.is_valid():
             return Response("not valid", status=400)
@@ -51,8 +67,42 @@ class RegisterView(APIView):
         return Response("no new user")
 
 class CartView(viewsets.ModelViewSet):
+
     queryset = CartModel.objects.all()
     serializer_class = CartSerializer
+    
+    def list(self, request):
+        # Retrieve all cart items
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return  JsonResponse({"data": serializer.data}, status = 200) 
+
+    def create(self, request):
+        serializer = self.serializer_class(data=request.data)
+        print("Serializer ",serializer, "\n Is valid: ", serializer.is_valid() )
+        if not serializer.is_valid():
+            print("[DEBUG] ", "Serializer not valid")
+            return JsonResponse({'msg': "not valid"}, status = 400)
+        print(serializer.data["added_by"],serializer.data["added_item"], serializer.data["added_time"] )
+        return JsonResponse({'msg': "Item added to cart"}, status = 200)
+    
+    def remove(self, request):
+        serializer = self.serializer_class(data=request.data)
+        print("Serializer ",serializer, "\n Is valid: ", serializer.is_valid() )
+        if not serializer.is_valid():
+            print("[DEBUG] REMOVE CART FUNCTION", "Serializer not valid")
+            return JsonResponse({'msg': "not valid"}, status = 400)       
+        
+        cart_item = CartModel.objects.get(pk=serializer.data["id"])
+        if cart_item:
+            cart_item.delete()
+            return JsonResponse({'msg': "Item deleted successfully"}, status = 200)
+        else :
+           return JsonResponse({'msg': "Item has not been found"}, status = 400) 
+        
+         
+
+    
 
 class ItemView(viewsets.ModelViewSet):
     queryset = Item.objects.all()
@@ -69,21 +119,57 @@ class AboutMeView(APIView):
 class SessionAboutMeView(AboutMeView):
     authentication_classes = [authentication.SessionAuthentication]
 
-def login(request):
-    
-    username = request.data.get('username')
-    password = request.data.get('password')
-    user = authenticate(request, username=username, password=password)
+class LogoutView(APIView):
+     permission_classes = (IsAuthenticated,)
+     def post(self, request):
+          try:
+               refresh_token = request.data["refresh_token"]
+               token = RefreshToken(refresh_token)
+               token.blacklist()
+               return Response(status=status.HTTP_205_RESET_CONTENT)
+          except Exception as e:
+               return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    if user is not None:
-        login(request, user)
-        refresh = RefreshToken.for_user(user)
-        return Response({
-            'access': str(refresh.access_token),
-            'refresh': str(refresh),
-        })
-    else:
-        return Response({'error': 'Invalid credentials. Please try again.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class ValidateCartView(APIView):
+    def post(self, request, *args, **kwargs):
+        user = self.request.user
+        cart_items = CartModel.objects.filter(user=user)
+
+        # Initialize variables to keep track of successful and failed purchases
+        successful_purchases = []
+        failed_purchases = []
+
+        for cart_item in cart_items:
+            item = cart_item.item
+
+            # Check if the item is still in stock
+            if item.quantity >= cart_item.quantity:
+                # Create a Purchase record
+                purchase = OrderItems(
+                    user=user,
+                    item=item,
+                    quantity=cart_item.quantity
+                )
+                successful_purchases.append(purchase)
+
+                # Update the item's quantity (subtract the purchased quantity)
+                item.quantity -= cart_item.quantity
+                item.save()
+            else:
+                # Not enough stock, adjust the quantity to the available stock
+                cart_item.quantity = item.quantity
+                failed_purchases.append(cart_item)
+
+        # Clear the user's cart
+        cart_items.delete()
+
+        success_message = "Cart validated and items purchased successfully."
+        if failed_purchases:
+            success_message += " Some items could not be purchased due to insufficient stock."
+
+        return JsonResponse({"message": success_message}, status=status.HTTP_200_OK)
 
 @csrf_exempt
 def search_item(request):
@@ -120,6 +206,10 @@ def cards(request, count):
     alllist = ["red", "blue", "yellow", "green"]
     colorlist = alllist[:count]
     return render(request, "cardsTemplate.html", {"color_list": colorlist})
+
+@csrf_exempt
+def add_items_to_cart():
+    return
 
 @csrf_exempt
 def populate_db(request):

@@ -12,7 +12,12 @@ class ItemSerializer(serializers.ModelSerializer):
         model = Item
         fields = "__all__"
 
+
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("username", "email", "password")
+
+class LoginSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(style = {"input_type":"password"})
+    username = serializers.CharField()

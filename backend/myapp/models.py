@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-
 class Item(models.Model):
     title = models.CharField(max_length=100,blank=False, null=False)
     description = models.TextField(blank=False, null=False)
@@ -12,12 +11,18 @@ class Item(models.Model):
     date_added = models.DateTimeField(auto_now_add=True)
     is_sold = models.BooleanField(default=False)
     seller = models.ForeignKey(User, on_delete=models.CASCADE)
+    item_quantity = models.PositiveIntegerField(default=1)
     auto_add = models.BooleanField(default=False)
 
 
+
 class CartModel(models.Model):
-    color = models.CharField(max_length=30)
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-    class Meta:
-        ordering = ["created"]
+    added_by = models.ForeignKey(User, on_delete=models.CASCADE,null=False)
+    added_item = models.ForeignKey(Item, on_delete=models.CASCADE,null=False)
+    added_time = models.DateTimeField(auto_now_add=True)
+
+class OrderItems(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    purchase_time = models.DateTimeField(auto_now_add=True)

@@ -20,10 +20,12 @@ urlpatterns = [
     path('api/get_items/',views.get_items, name='get_items'),
     path("api/me/", views.AboutMeView.as_view()),
     path("api/me-session/", views.SessionAboutMeView.as_view()),
-    path('api/login/', views.login, name='login'),
+    path("api/register/", views.RegisterView.as_view()),
+    path('api/update-cart/', views.CartView.as_view({'get': 'list', 'post': 'create', 'delete':"remove"}), name='cart-view'),
+    #path('api/login/', views.login, name='login'),
+    path("api/login/", views.LoginView.as_view()),
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    path("api/register/", views.RegisterView.as_view()),
-
-    
+    path('api/logout/', views.LogoutView.as_view(), name ='logout'),
+      
 ]

@@ -1,56 +1,190 @@
 "use client";
 
 import styles from "@/app/page.module.css";
-// import Card from "./components/Card";
 import Cart from "./components/Cart";
-
+import { FaHeart } from 'react-icons/fa';
+import { AiOutlineHeart } from 'react-icons/ai';
+import { AiFillHeart } from 'react-icons/ai';
+import { BsCartPlus } from "react-icons/bs";
+import { BiCartAdd } from "react-icons/bi";
+import { BsFillCartCheckFill } from "react-icons/bs";
 
 import Navbar from 'react-bootstrap/Navbar';
 import NvBar from "./components/Navbar";
 import 'bootstrap/dist/css/bootstrap.css';
 import { Button, Container, Form, Nav, Card, Row, Col, } from 'react-bootstrap';
-
 import { useEffect, useState } from "react";
-import UserMenuBar from "./components/UserMenu" 
+import UserMenuBar from "./components/UserMenu";
+import FlashMessage from './../../components/FlashMessage'
 
 export default function Home() {
+
   const [cart, setCart] = useState([]);
-  const init = async () => {
-    const res = await fetch("/api/cart", {
-      headers: { "Content-type": "application/json" },
-    });
-    const data = await res.json();
-    setCart(data);
+  const TOKEN_KEY = "tokens"
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [userinfo, setUserinfo] = useState("not logged in");
+  const [activeTab, setActiveTab] = useState('login');
+  const [isAuth, setisAuth] = useState(false);
+  const [flashMessage, setFlashMessage] = useState(null);
+
+  const showFlashMessage = (message, type) => {
+    setFlashMessage({ message, type });
   };
+
+  const closeFlashMessage = () => {
+    setFlashMessage(null);
+  };
+
+  const getToken = () => {
+
+    if (typeof window !== 'undefined') {
+      
+      const value = localStorage.getItem(TOKEN_KEY);
+      if(!value) return
+      const tokens = JSON.parse(value)
+      return tokens
+    }
+    else {
+      return
+    }    
+  }
+
+  const checkAuth = async () => {
+    const tokens = getToken();
+    console.log("checkAuth: ", tokens)
+    
+    if (tokens) {
+      const res = await fetch("/api/me/", {
+        headers: {
+          "Authorization": `Bearer ${tokens.access}`
+        }
+      });
+  
+      if (res.ok) {
+        
+        setisAuth(true);
+        console.log("User is authenticated", isAuth)
+      } else {
+        setisAuth(false);
+        console.log("User is not authenticated")
+      }
+      return tokens
+    } else {
+      console.error("Tokens or access token is undefined"); 
+      return
+    }
+  };
+  
   useEffect(() => {
-    init();
+    //init();
   }, []);
 
-  //Populate DB with 6 users (of which 3 users (i.e. sellers) own 10 items)
-
-
-  //add element to cart state
-  const addCard = async (cardColor) => {
-    await fetch("/api/cart", {
-      method: "POST",
-      body: JSON.stringify({ color: cardColor }),
-      headers: { "Content-type": "application/json" },
-    });
-    await init();
+  const HeartIcon = ({ itemID }) => {
+    const [isLiked, setIsLiked] = useState(false);
+  
+    const handleHeartClick = () => {
+      setIsLiked(!isLiked);
+      
+    };
+  
+    return (
+      <div
+        style={{
+          display: 'flex',
+          cursor: 'pointer',
+          flexDirection: 'column',
+        }}
+        onClick={handleHeartClick}
+      >
+        {isLiked ? (
+          <BsFillCartCheckFill  size={18} key={itemID}  onClick={deleteItem} />
+        ) : (
+          
+          <AiOutlineHeart size={18} key={itemID}  onClick= {() => addItem(itemID)} />
+        )}
+      </div>
+    );
   };
 
-  //remove element from cart state based on index(key)
-  const deleteCard = async (id) => {
-    await fetch(`/api/cart/${id}`, {
-      method: "DELETE",
-      headers: { "Content-type": "application/json" },
-    });
-    await init();
+  // DELETE ITEM FROM CART
+  const deleteItem = async (itemId) => {
+    checkAuth();
+    const tokens = getToken()
+    try {
+      
+      if(isAuth){
+        const response = await fetch("/api/update-cart/", {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${tokens.access}`,
+          },
+          body: JSON.stringify({
+            itemId: itemId,
+          }),
+        });
+        if(response.ok)
+        {
+            showFlashMessage("Item deleted from cart",'succes')
+        } else {
+            showFlashMessage("Erro occured",'error')
+        }
+      }
+      else{
+        showFlashMessage("Only authenticated users can order item(s)",'error')
+      }
+  
+    } catch (error) {
+      showFlashMessage(String(error), 'error')
+      console.error('Error occured', error);
+    }
   };
 
-  //get_all_items in db
+// DEALING WITH CART ITEM ADDITION
+const [cartItems, setCartItems] = useState([]);
+
+
+
+const addItem = async (itemId) => {
+  checkAuth();
+  const tokens = getToken();
+  console.log("checkAuth: ", tokens)
+  try {
+    console.log("Inside addItem asyn, isAuth : ", isAuth)
+    if(isAuth){
+      const response = await fetch("/api/update-cart/", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${tokens.access}`,
+        },
+        body: JSON.stringify({
+          itemId: itemId,
+        }),
+      });
+      if(response.ok)
+      {
+          showFlashMessage("Item(s) ordered",'succes')
+      } else {
+          showFlashMessage("Item is no longer available",'error')
+      }
+    }
+    else{
+      showFlashMessage("Only authenticated users can order item(s)",'error')
+    }
+
+  } catch (error) {
+    showFlashMessage(String(error), 'error')
+    console.error('Error occured', error);
+  }
+};
+
+
+
+
    
-    const [items, setItems] = useState([]);
+  const [items, setItems] = useState([]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -68,26 +202,24 @@ export default function Home() {
         fetchData();
     }, [])
 
-
-  const divs = [];
-  
-
-  console.log(items)
-
   const cardStyle = {
-    width: "200px",
-    height: "300px",
-    padding: "10px",
-    margin: "20px",
-    border: "1px solid #ccc",
-    borderRadius: "5px",
-    boxShadow: "0px 0px 5px #666",
+    
+    width: "202px",
+    height: "295px",
+    padding: "0px",
+    margin: "6px",
+    
+    //border: "1px solid #ccc",
+    //borderRadius: "5px",
+    //boxShadow: "0px 0px 5px #666",
+    
     cursor: "pointer",
     fontSize: "9px"
     
   };
-//<p>{item.description}</p>
-  const itemsPerColumn = 4;
+
+  
+  const itemsPerColumn = 6;
   const columns = [];
   for (let i = 0; i < items.length; i += itemsPerColumn) {
     const columnItems = items.slice(i, i + itemsPerColumn);
@@ -98,24 +230,77 @@ export default function Home() {
                 flexWrap: 'wrap',
                 justifyContent: 'center',
                 alignItems: 'center',
-}}>
-        <img src={item.img_url} alt={item.title} style={{ maxWidth: "150px", maxHeight: "150px" }} />
+                  }}>
+        <img src={item.img_url} alt={item.title} style={{ background: "#F2F2F2", maxWidth: "200px", 
+                                                          maxHeight: "200px", marginTop:"0px", padding:"0px" }} />
       </div>
-      <Row>
-        <p style={{"fontSize": "11px", margin:"5px"}}> <b>{item.title}</b></p>
-      
-        <p>Price: ${item.price}</p>
-        <p>Date Added: {item.date_added}</p>
-        <p>{item.is_sold ? "Sold" : "Available"}</p>
-        <p>Seller ID: {item.seller_id}</p>
-      </Row>
+      <div>
+        <div style={{display: 'flex', flexDirection:"row", alignItems: 'center',}}>
+              <div style={{ width:"88%","fontSize": "11px", margin:"5px 0px 5px 2px", display: 'flex', flexDirection:"column"}}> <b>{item.title}</b></div>
+              <div style={{
+                            display: 'flex',
+                            cursor: 'pointer',                
+                            flexDirection:"column"
+                          }}              
+              >
+                <BiCartAdd size={18} key={item.id} onClick = {() => addItem(item.id)} />
+              </div>
+      </div>
+        <div style={{"fontSize": "8px", margin:"5px 0px 5px 2px",   
+        
+                    lineHeight: "1.5em",
+                    height: "4.2em",       /* height is 2x line-height, so two lines will display */
+                    overflow: "hidden",
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitBoxOrient: 'vertical',
+                    WebkitLineClamp: 3, 
+                    marginBottom:"10px"
+                    }}>
+              
+                      {item.description}
+        </div>
+
+        <div style = {{
+          display:'flex',
+          flexDirection:"row",
+          width:"100%",
+          fontSize: "11px",
+          marginLeft:"2px"
+        }}> 
+                <div style = {{
+                          display:'flex',
+                          flexDirection:"column",
+                          width:"50%"
+                        }}>
+                          <b> {item.price} € </b>
+                  </div>
+
+                  <div style = {{
+                        display:'flex',
+                        flexDirection:"column",
+                        alignItems: 'flex-end',
+                        width:"48%",
+                        fontSize: "10px"
+                      }}>
+                      {new Date(item.date_added).toISOString().split('T')[0]}
+                  </div>
+          </div>
+      </div>
     </div>
     ));
-    columns.push(<Row key={i} >
+
+    columns.push(<div style={{  
+                              display: 'flex',
+                              flexDirection: 'row',
+                              marginBottom:"20px",  
+                              
+                            }} 
+                            key={i} >
 
       {columnCards}
       
-      </Row>);
+      </div>);
   }
 
 
@@ -123,17 +308,23 @@ export default function Home() {
     <div>
       <UserMenuBar/>
       <NvBar/>
-        
+      {flashMessage && (
+        <FlashMessage
+          message={flashMessage.message}
+          type={flashMessage.type}
+          onClose={closeFlashMessage}
+        />
+      )}
       <div style={{  
             display: 'flex',
-            flexDirection: 'column',  // Ensure a vertical layout
+            flexDirection: 'column',  
             alignItems: 'center',
             justifyContent: 'center',
-            margin: "10px",
+            margin: "5px",
             marginBottom:"100px",
-            width: '80%',
+            width: '100%',
           }}>
-            <h1>Home</h1>
+            <h3> Shop </h3>
 
             <div
               style={{
@@ -145,10 +336,8 @@ export default function Home() {
               }}
             >
               {columns}
+
             </div>
-              <Cart  style={{
-                "margin-top": '100px', 
-              }} items={cart} deleteHandler={deleteCard} />
             </div>
 
             <a href="/">Back</a>
