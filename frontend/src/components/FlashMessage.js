@@ -13,7 +13,10 @@ const FlashMessage = ({ message, type, onClose }) => {
   }, [onClose]);
 
   return (
-    <div style={{ display: isVisible ? 'block' : 'none', borderRadius: '5px', padding: '10px', backgroundColor: type === 'error' ? '#F74544' : '#42E331', color: 'white', textAlign: 'center' }}>
+    <div style={{ display: isVisible ? 'block' : 'none', 
+                  borderRadius: '5px', padding: '10px', 
+                  backgroundColor: type === 'error' ? '#F84F31' : '#23C552', 
+                  color: 'white', textAlign: 'center' }}>
       {message}
     </div>
   );

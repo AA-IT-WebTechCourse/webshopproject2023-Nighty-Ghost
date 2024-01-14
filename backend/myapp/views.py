@@ -16,6 +16,8 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 import json, os
 from rest_framework.permissions import IsAuthenticated
+from datetime import datetime, timedelta
+from django.utils import timezone
 
 # @authentication_classes([JWTAuthentication])
 # @permission_classes([IsAuthenticated])
@@ -67,42 +69,99 @@ class RegisterView(APIView):
         return Response("no new user")
 
 class CartView(viewsets.ModelViewSet):
+    authentication_classes = [authentication.SessionAuthentication, JWTAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
 
     queryset = CartModel.objects.all()
     serializer_class = CartSerializer
     
     def list(self, request):
-        # Retrieve all cart items
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return  JsonResponse({"data": serializer.data}, status = 200) 
+        # Retrieve all cart items for the user
+        user = request.user
+        cart_instances = CartModel.objects.filter(added_by=user).order_by("added_time")
+
+        # Extract item ids from the cart instances
+        item_ids_list = [cart_instance.added_item.id for cart_instance in cart_instances]
+        items_added_to_cart = Item.objects.filter(id__in=item_ids_list)
+        cart_serializer = CartSerializer(cart_instances, many=True)
+        item_serializer = ItemSerializer(items_added_to_cart, many=True)
+
+        concatenated_data = []
+        for cart_data, item_data in zip(cart_serializer.data, item_serializer.data):
+            concatenated_data.append({**cart_data, 'added_item': item_data})
+        
+        for elem in concatenated_data:
+            print(elem)
+        #print(concatenated_data)
+
+        return JsonResponse({'items': concatenated_data}, status = 200)
+
 
     def create(self, request):
-        serializer = self.serializer_class(data=request.data)
+        if not request.user.is_authenticated:
+            return JsonResponse({'msg': 'Only authenticated users'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+       
+        added_id = request.data["itemId"]
+
+        user = request.user
+        print("User id : ",user.id)
+        print('Item ID : ', added_id )
+        
+        serializer_data = {
+            'added_by': user.id,
+            'added_item': added_id,  
+        }
+        serializer = self.serializer_class(data= serializer_data)
+
         print("Serializer ",serializer, "\n Is valid: ", serializer.is_valid() )
+
         if not serializer.is_valid():
             print("[DEBUG] ", "Serializer not valid")
             return JsonResponse({'msg': "not valid"}, status = 400)
-        print(serializer.data["added_by"],serializer.data["added_item"], serializer.data["added_time"] )
-        return JsonResponse({'msg': "Item added to cart"}, status = 200)
-    
-    def remove(self, request):
-        serializer = self.serializer_class(data=request.data)
-        print("Serializer ",serializer, "\n Is valid: ", serializer.is_valid() )
-        if not serializer.is_valid():
-            print("[DEBUG] REMOVE CART FUNCTION", "Serializer not valid")
-            return JsonResponse({'msg': "not valid"}, status = 400)       
         
-        cart_item = CartModel.objects.get(pk=serializer.data["id"])
+        print(serializer.data["added_by"],serializer.data["added_item"])
+        
+        try:
+            
+            item = Item.objects.get(id=serializer.data["added_item"])
+            print(item)
+            
+            CartModel.objects.create(added_by = user,
+                                    added_item = item)
+            return JsonResponse({'msg': "Unable to add item"}, status = 200)
+        
+        except Exception as e:
+            print("[DEBUG ERROR ADD]\n", e)
+            return JsonResponse({'msg': str("Unable to add item due to "+ str(e))}, status = 200)
+        
+    def remove(self, request):
+        added_id = request.data["itemId"]
+        user = request.user
+        print("User id : ",user.id)
+        print('Item ID : ', added_id )
+        
+        serializer_data = {
+            'added_by': user.id,
+            'added_item': added_id,  
+        }
+        serializer = self.serializer_class(data= serializer_data)
+
+        print("Serializer ",serializer, "\n Is valid: ", serializer.is_valid() )
+
+        if not serializer.is_valid():
+            print("[DEBUG] ", "Serializer not valid")
+            return JsonResponse({'msg': "not valid"}, status = 400)
+        item = Item.objects.get(id=serializer.data["added_item"])
+        cart_item = CartModel.objects.filter(added_by = user, added_item = item).first()
+        print("[DEBUG delete Item] : ", cart_item)
         if cart_item:
             cart_item.delete()
             return JsonResponse({'msg': "Item deleted successfully"}, status = 200)
         else :
            return JsonResponse({'msg': "Item has not been found"}, status = 400) 
         
-         
 
-    
 
 class ItemView(viewsets.ModelViewSet):
     queryset = Item.objects.all()
@@ -119,19 +178,9 @@ class AboutMeView(APIView):
 class SessionAboutMeView(AboutMeView):
     authentication_classes = [authentication.SessionAuthentication]
 
-class LogoutView(APIView):
-     permission_classes = (IsAuthenticated,)
-     def post(self, request):
-          try:
-               refresh_token = request.data["refresh_token"]
-               token = RefreshToken(refresh_token)
-               token.blacklist()
-               return Response(status=status.HTTP_205_RESET_CONTENT)
-          except Exception as e:
-               return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
-
+#TO CHECK
 class ValidateCartView(APIView):
     def post(self, request, *args, **kwargs):
         user = self.request.user
@@ -190,26 +239,8 @@ def search_item(request):
         return HttpResponseServerError({'error': 'Server error occurred'})
 
 
-def hello(request):
-    return HttpResponse("Hello")
 
 
-def great(request, name):
-    return HttpResponse(f"Hello, {name}")
-
-
-def nicergreat(request, name):
-    return render(request, "mytemplate.html", {"aname": name})
-
-
-def cards(request, count):
-    alllist = ["red", "blue", "yellow", "green"]
-    colorlist = alllist[:count]
-    return render(request, "cardsTemplate.html", {"color_list": colorlist})
-
-@csrf_exempt
-def add_items_to_cart():
-    return
 
 @csrf_exempt
 def populate_db(request):
@@ -221,161 +252,6 @@ def populate_db(request):
 
     
     try :
-        # item_list = [
-        #       {
-        #         "title": "Winter Coat",
-        #         "description": "Warm and stylish winter coat with faux fur lining for extra comfort.",
-        #         "price": 129.99,
-        #     },
-        #     {
-        #         "title": "Running Shoes",
-        #         "description": "High-performance running shoes with advanced cushioning and support.",
-        #         "price": 89.99,
-        #     },
-        #     {
-        #         "title": "Leather Jacket",
-        #         "description": "Classic leather jacket with a stylish design and comfortable fit.",
-        #         "price": 149.99,
-        #     },
-        #     {
-        #         "title": "Business Suit",
-        #         "description": "Tailored business suit for a sophisticated and professional look.",
-        #         "price": 249.99,
-        #     },
-        #     {
-        #         "title": "Winter Coat",
-        #         "description": "Warm and durable winter coat with insulation for cold weather.",
-        #         "price": 179.99,
-        #     },
-        #     {
-        #         "title": "Sneakers",
-        #         "description": "Casual sneakers with a trendy design, suitable for everyday wear.",
-        #         "price": 59.99,
-        #     },
-            
-        #     {
-        #         "title": "Hiking Boots",
-        #         "description": "Sturdy hiking boots with waterproof features for outdoor adventures.",
-        #         "price": 129.99,
-        #     },
-        #     {
-        #         "title": "Denim Jeans",
-        #         "description": "Classic denim jeans with a comfortable fit, perfect for casual occasions.",
-        #         "price": 69.99,
-        #     },
-        #     {
-        #         "title": "Summer Dress",
-        #         "description": "Lightweight and stylish summer dress for a fashionable look.",
-        #         "price": 79.99,
-        #     },
-        #     {
-        #         "title": "Formal Shirt",
-        #         "description": "Elegant formal shirt made from high-quality fabric for special occasions.",
-        #         "price": 49.99,
-        #     },
-        #     {
-        #       "title": "Sports Bra",
-        #       "description": "Supportive sports bra designed for comfort during workouts.",
-        #       "price": 34.99,
-        #   },
-        #   {
-        #       "title": "Track Pants",
-        #       "description": "Breathable track pants suitable for running and other activities.",
-        #       "price": 44.99,
-        #   },
-        #   {
-        #       "title": "Wool Sweater",
-        #       "description": "Cozy wool sweater for chilly days, with a classic knit pattern.",
-        #       "price": 54.99,
-        #   },
-        #   {
-        #       "title": "Graphic T-Shirt",
-        #       "description": "Stylish graphic t-shirt featuring unique artwork and a modern fit.",
-        #       "price": 24.99,
-        #   },
-        #   {
-        #       "title": "Leather Boots",
-        #       "description": "Fashionable leather boots with a trendy design, perfect for any season.",
-        #       "price": 109.99,
-        #   },
-        #   {
-        #       "title": "Summer Hat",
-        #       "description": "Wide-brimmed summer hat for sun protection and a stylish look.",
-        #       "price": 19.99,
-        #   },
-        #   {
-        #       "title": "Puffer Jacket",
-        #       "description": "Quilted puffer jacket with insulation for warmth in colder weather.",
-        #       "price": 79.99,
-        #   },
-        #   {
-        #       "title": "Yoga Leggings",
-        #       "description": "Comfortable and flexible yoga leggings for your fitness routine.",
-        #       "price": 29.99,
-        #   },
-        #   {
-        #       "title": "Plaid Shirt",
-        #       "description": "Classic plaid shirt made from soft cotton for a casual yet refined style.",
-        #       "price": 39.99,
-        #   },
-        #   {
-        #       "title": "Raincoat",
-        #       "description": "Waterproof raincoat with a stylish design to keep you dry in the rain.",
-        #       "price": 64.99,
-        #   },
-        #   {
-        #     "title": "Running Shoes",
-        #     "description": "High-performance running shoes with advanced cushioning technology.",
-        #     "price": 89.99,
-        # },
-        # {
-        #     "title": "Denim Jeans",
-        #     "description": "Classic denim jeans with a modern slim fit for a timeless look.",
-        #     "price": 49.99,
-        # },
-        # {
-        #     "title": "Formal Suit",
-        #     "description": "Elegant formal suit for special occasions, tailored for a perfect fit.",
-        #     "price": 149.99,
-        # },
-        # {
-        #     "title": "Smartwatch",
-        #     "description": "Feature-packed smartwatch with fitness tracking and notification capabilities.",
-        #     "price": 129.99,
-        # },
-        # {
-        #     "title": "Travel Backpack",
-        #     "description": "Durable and spacious travel backpack with multiple compartments.",
-        #     "price": 79.99,
-        # },
-        # {
-        #     "title": "Wireless Headphones",
-        #     "description": "Premium wireless headphones with noise-canceling technology.",
-        #     "price": 129.99,
-        # },
-        # {
-        #     "title": "Sunglasses",
-        #     "description": "Stylish sunglasses with UV protection for a fashionable and safe look.",
-        #     "price": 34.99,
-        # },
-        # {
-        #     "title": "Fitness Tracker",
-        #     "description": "Slim fitness tracker to monitor your daily activity and health stats.",
-        #     "price": 59.99,
-        # },
-        # {
-        #     "title": "Leather Belt",
-        #     "description": "Genuine leather belt with a classic buckle for a polished finishing touch.",
-        #     "price": 24.99,
-        # },
-        # {
-        #     "title": "Crossbody Bag",
-        #     "description": "Versatile crossbody bag with adjustable straps for a comfortable fit.",
-        #     "price": 39.99,
-        # },
-          
-        # ]
-    
         current_directory = os.getcwd()
         print("Current Working Directory:", current_directory)
         # JSON file path
@@ -386,8 +262,6 @@ def populate_db(request):
             items_list = json.load(file)
         print("[DEBUG ]\n ",items_list)
             #Creating 6 users
-        
-
 
         try : 
             for i in range(1, 7):

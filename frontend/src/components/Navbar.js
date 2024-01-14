@@ -9,8 +9,8 @@ import { Row, Col,  InputGroup, FormControl } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css'; 
 import 'bootstrap-icons/font/bootstrap-icons.css'; 
 import { AiOutlineClose } from 'react-icons/ai';
-import React, { useState } from 'react';
-import FlashMessage from '../../../components/FlashMessage' 
+import React, { useEffect,useState } from 'react';
+import FlashMessage from './FlashMessage' 
 import NavDropdown from 'react-bootstrap/NavDropdown';
 import { BiCart } from 'react-icons/bi';
 import { BsSearch } from "react-icons/bs";
@@ -61,11 +61,37 @@ function NvBar() {
   };
   
   checkAuth();
+  
+  // LOGOUT
+  const logout = async () => {
+    const tokens = getToken();
+    
+    if (tokens && tokens.access && tokens.refresh) {
+      console.log(typeof(tokens.refresh))
+      const res = await fetch("/api/logout/", {
+        method: 'POST',
+        headers: {
+          "Authorization": `Bearer ${tokens.access}`,
+          "Content-Type": "application/json", 
+        },
+        body: JSON.stringify({
+          refresh: String(tokens.refresh),
+        }),
+      });
+  
+      if (res.ok) {
+        setisAuth(false);
+        localStorage.setItem(TOKEN_KEY, JSON.stringify(""));
+        window.location.replace('http://localhost:8080/login');
+      } else {
+        setisAuth(true);
+      }
+    } else {
+      
+      console.error("Tokens or access token is undefined");
+      
+    }
 
-  const logout = () => {
-     // Remove refresh token from localStorage
-    localStorage.setItem(TOKEN_KEY, JSON.stringify(""));
-    window.location.replace('http://localhost:8080/login');
   }
 
   // Flashmessage
@@ -114,6 +140,7 @@ function NvBar() {
 
     // RETRIEVE ITEMS 
     const [items, setItems] = useState([]);
+    const [content, setcontent] = useState('');
     const [cartEmpty, setCartEmpty] = useState(false);
     const getCartItems = async () => {
       checkAuth();
@@ -132,17 +159,27 @@ function NvBar() {
           if(response.ok)
           {
               const data = await response.json();
+              console.log("[RETURNED DATA QUERY CART: ", data.items, )
               setItems(data.items)
+              console.log(items,data.items.length)
               if(items.length > 0)
               {
-                for (let i = 0; i < items.length; i++) {
-                  //cartDivItems.push(<div key={items.id}>Element {items.added_by}</div>);
-                  cartDivItems.push(<div key={i}>Element {i}</div>);
-                }
-                setCartEmpty(true)
+                console.log("Items are > 0")
+
+                  const cartDivItems = data.items.map((item, index) => (
+                    <div key={index} style={{  
+                      display: 'flex',
+                      flexDirection: 'row',
+                      marginBottom: "20px",
+                      background: "yellow"
+                    }}> Element {index}</div>
+                  ));
+                setcontent(cartDivItems);
+                console.log("cartDiv content :\n",cartDivItems)
+                setCartEmpty(false)
               }
               else{
-                setCartEmpty(false)
+                setCartEmpty(true)
               }
               //showFlashMessage(" Cart Items from cart",'succes')
           } else {
@@ -160,10 +197,13 @@ function NvBar() {
     };
   // SHOW AND HIDE CART
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  useEffect(() => {
+    getCartItems();
+  }, []);
 
   const showCart = () => {
     setIsPanelOpen(!isPanelOpen);
-    getCartItems();
+    getCartItems()
   };
 
   const hideCart = () => {
@@ -188,12 +228,6 @@ function NvBar() {
     cursor: 'pointer',
   };
   
-  // UPDATE CONTENT CART
-  const [elementContent, setElementContent] = useState('Initial Content');
-  
-  const updateContent = () => {
-    setElementContent('New Content');
-  };
 
   // DELETE ITEM FROM CART
   const deleteItem = async (itemId) => {
@@ -228,8 +262,6 @@ function NvBar() {
       console.error('Error occured', error);
     }
   };
-//<button onClick={updateContent}>Update Content</button>
-
 
   return (
     <Navbar expand="lg" className="bg-body-tertiary">
@@ -237,18 +269,16 @@ function NvBar() {
         <Navbar.Brand href="#">MarketFlow <BiCart /> </Navbar.Brand>
         <Navbar.Toggle aria-controls="navbarScroll" />
         <Navbar.Collapse id="navbarScroll" style={{maxWidth: "900px"}}>
-          
-          <div className="input-group flex-row" style={{marginLeft:"100px",marginRight:"50px",fontSize:"10px"}} >
-            <button className="btn btn-outline-dark d-flex align-items-center"  type="button" style={{ height:"20px", }} onClick={searchItemFunction}>
-                <BsSearch size={15} />
-              </button>
-            <input type="text" className="form-control"  placeholder="Search" aria-label="Search" style={{ fontSize:"10px", height:"20px", maxWidth:"700px"}} value={SearchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-          </div>
+
         </Navbar.Collapse>
-        <Nav className="me-auto">
+        <Nav className="me-auto" >
+ 
             
-            
-            <div style={{ display: 'flex', alignItems: 'center', marginRight:"15px", cursor:"pointer" }}> <BsBagCheck size={18} id="cart" onClick={showCart} /> </div> 
+            <div style={{ display: 'flex', alignItems: 'center', marginRight:"15px", cursor:"pointer",  }}> 
+                <a href='http://localhost:8080/cart' style={{textDecoration: "none", color: "inherit"}}>
+                  <BsBagCheck size={18} id="cart"/> 
+                </a> 
+            </div> 
             
             <NavDropdown title={<BsPerson />} id="basic-nav-dropdown">
               <NavDropdown.Item href="http://localhost:8080/myitems">
@@ -289,14 +319,19 @@ function NvBar() {
                           alignItems:'center',
                           justifyContent:'center', fontSize:"14px"}}>
               Cart
+
+              
           </div>
-                  
-          <div>
-            
-            <div id="cartItems">
-              {elementContent}
-            </div>
-          </div>
+          <div style = {{ display:'flex', 
+                          flexDirection:'row',
+                          alignItems:'center',
+                          justifyContent:'center', fontSize:"14px"}}>
+                
+                <div id="cartItems">
+                  {content}
+                </div>
+              </div>      
+
 
         </div>
       </div>

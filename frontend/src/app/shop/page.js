@@ -1,20 +1,19 @@
 "use client";
 
-import styles from "@/app/page.module.css";
-import Cart from "./components/Cart";
 import { FaHeart } from 'react-icons/fa';
 import { AiOutlineHeart } from 'react-icons/ai';
 import { AiFillHeart } from 'react-icons/ai';
 import { BsCartPlus } from "react-icons/bs";
+import { BsSearch } from "react-icons/bs";
 import { BiCartAdd } from "react-icons/bi";
 import { BsFillCartCheckFill } from "react-icons/bs";
 
 import Navbar from 'react-bootstrap/Navbar';
-import NvBar from "./components/Navbar";
 import 'bootstrap/dist/css/bootstrap.css';
 import { Button, Container, Form, Nav, Card, Row, Col, } from 'react-bootstrap';
 import { useEffect, useState } from "react";
-import UserMenuBar from "./components/UserMenu";
+import NvBar from './../../components/Navbar'
+import UserMenuBar from "./../../components//UserMenu";
 import FlashMessage from './../../components/FlashMessage'
 
 export default function Home() {
@@ -107,6 +106,40 @@ export default function Home() {
     );
   };
 
+ // SEARCH
+ const [SearchTerm, setSearchTerm] = useState('');
+ const searchItemFunction = async () => {
+   try {
+     console.log("Submit cliked")
+     console.log("SearchTerm : ",SearchTerm)
+     
+     const response = await fetch('/api/search/', {
+       method: 'POST',
+       headers: {
+         'Content-Type': 'application/json',
+       },
+       body: JSON.stringify({
+         SearchTerm: SearchTerm,
+       }),
+     });
+     const data = await response.json()
+     console.log("Response for search is : ", response)
+     console.log("Data sent back is : ", data)
+     if(response.ok){
+       showFlashMessage(data.length +'successfully!', 'success')
+     }
+
+     if (!response.ok) {
+       showFlashMessage('Search failed', 'error')
+       throw new Error('Search failed');
+     }
+
+   } catch (error) {
+     console.error('Error during search:', error);
+   }
+ };
+
+
   // DELETE ITEM FROM CART
   const deleteItem = async (itemId) => {
     checkAuth();
@@ -167,6 +200,8 @@ const addItem = async (itemId) => {
       {
           showFlashMessage("Item(s) ordered",'succes')
       } else {
+        const data = await response.json()
+        console.log(data.msg)
           showFlashMessage("Item is no longer available",'error')
       }
     }
@@ -308,6 +343,7 @@ const addItem = async (itemId) => {
     <div>
       <UserMenuBar/>
       <NvBar/>
+      
       {flashMessage && (
         <FlashMessage
           message={flashMessage.message}
@@ -325,6 +361,18 @@ const addItem = async (itemId) => {
             width: '100%',
           }}>
             <h3> Shop </h3>
+
+            <div className="input-group flex-row" style={{display: 'flex',
+                                                          flexDirection: 'row',
+                                                          marginLeft:"50%",
+                                                            marginRight:"50px",
+                                                            fontSize:"10px"
+                                                            }} >
+                  <button className="btn btn-outline-dark d-flex align-items-center"  type="button" style={{ height:"20px", }} onClick={searchItemFunction}>
+                      <BsSearch size={15} />
+                    </button>
+                  <input type="text" className="form-control"  placeholder="Search" aria-label="Search" style={{ fontSize:"10px", height:"20px", maxWidth:"700px"}} value={SearchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          </div>
 
             <div
               style={{

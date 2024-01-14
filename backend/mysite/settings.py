@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "myapp",
     "rest_framework",
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
 MIDDLEWARE = [
@@ -60,7 +61,10 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         # ...
     ],
-    'SIMPLE_JWT': {
+    # ...
+}
+
+SIMPLE_JWT = {
         'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  
         'REFRESH_TOKEN_LIFETIME': timedelta(days=1),     
         'ROTATE_REFRESH_TOKENS': False,
@@ -77,8 +81,6 @@ REST_FRAMEWORK = {
         'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
         'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
         'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),}
-    # ...
-}
 
 ROOT_URLCONF = "mysite.urls"
 
