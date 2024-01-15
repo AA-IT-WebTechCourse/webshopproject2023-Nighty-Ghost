@@ -20,10 +20,6 @@ export default function Home() {
 
   const [cart, setCart] = useState([]);
   const TOKEN_KEY = "tokens"
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [userinfo, setUserinfo] = useState("not logged in");
-  const [activeTab, setActiveTab] = useState('login');
   const [isAuth, setisAuth] = useState(false);
   const [flashMessage, setFlashMessage] = useState(null);
 
@@ -358,29 +354,36 @@ const addItem = async (itemId) => {
             justifyContent: 'center',
             margin: "5px",
             marginBottom:"100px",
-            width: '100%',
+            width: '98%',
           }}>
-            <h3> Shop </h3>
-
-            <div className="input-group flex-row" style={{display: 'flex',
-                                                          flexDirection: 'row',
-                                                          marginLeft:"50%",
-                                                            marginRight:"50px",
-                                                            fontSize:"10px"
-                                                            }} >
-                  <button className="btn btn-outline-dark d-flex align-items-center"  type="button" style={{ height:"20px", }} onClick={searchItemFunction}>
-                      <BsSearch size={15} />
-                    </button>
-                  <input type="text" className="form-control"  placeholder="Search" aria-label="Search" style={{ fontSize:"10px", height:"20px", maxWidth:"700px"}} value={SearchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            
+            <div style={{ display: 'flex',
+                          flexDirection: 'row',
+                          
+                          marginRight:"40%",
+                           fontSize:"10px", }} >
+              <div className="input-group " style={{display: 'flex',
+                                                            flexDirection: 'row',
+                                                            marginLeft:"50%",
+                                                              marginRight:"50px",
+                                                              fontSize:"10px",
+                                                              width:"1000px",
+                                                            
+                                                              }} >
+                                                      
+                    <button className="btn btn-outline-dark d-flex align-items-center"  type="button" style={{ height:"20px", }} onClick={searchItemFunction}>
+                        <BsSearch size={15} />
+                      </button>
+                    <input type="text" className="form-control"  placeholder="Search" aria-label="Search" style={{ fontSize:"10px", height:"20px", maxWidth:"700px"}} value={SearchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            </div>
           </div>
-
             <div
               style={{
                 display: 'flex',
                 flexWrap: 'wrap',
                 justifyContent: 'center',
                 alignItems: 'center',
-                margin: '10px auto', 
+                margin: '15px', 
               }}
             >
               {columns}

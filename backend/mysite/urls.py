@@ -11,11 +11,13 @@ router.register(r"cart", views.CartView, basename="cart")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/search/", views.search_item),
     path("api/", include(router.urls)),
+    path("api/search/", views.ItemViewPublic.as_view({'post': 'search_item'}), name='search-item-view'),
+    path('api/my-items/', views.ItemView.as_view({'get': 'myitems'}), name='myitem-view'),
+    path('api/get_items/', views.ItemViewPublic.as_view({'get': 'get_items'}), name='all-item-view'),
     path('api/populate_db/', views.populate_db, name='populate_db'),
-    path('api/get_items/',views.get_items, name='get_items'),
     path("api/me/", views.AboutMeView.as_view()),
+    path("api/me-session/", views.SessionAboutMeView.as_view()),
     path("api/me-session/", views.SessionAboutMeView.as_view()),
     path("api/register/", views.RegisterView.as_view()),
     path('api/update-cart/', views.CartView.as_view({'get': 'list', 'post': 'create', 'delete':"remove"}), name='cart-view'),

@@ -136,28 +136,27 @@ useEffect(() => {
       checkAuth();
       const tokens = getToken();
 
-        const fetchData = async () => {
+      const fetchData = async () => {
 
-            try {
+        try {
+            const response = await fetch("/api/update-cart/", {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${tokens.access}`,
+                },
+              
+              });
 
-                const response = await fetch("/api/update-cart/", {
-                    method: 'GET',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${tokens.access}`,
-                    },
-                  
-                  });
-
-                const data = await response.json();
-                console.log(typeof data.items); // Using typeof for a quick check
-                console.log(Object.keys(data.items).length);
-                setItems(data.items);
-                console.log(data.items)
-            } catch (error) {
-                console.error('Error fetching items:', error);
-            }
-        };
+            const data = await response.json();
+            console.log(typeof data.items); // Using typeof for a quick check
+            console.log(Object.keys(data.items).length);
+            setItems(data.items);
+            console.log(data.items)
+        } catch (error) {
+            console.error('Error fetching items:', error);
+        }
+      };
 
         fetchData();
     }, [])

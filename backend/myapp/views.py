@@ -161,11 +161,57 @@ class CartView(viewsets.ModelViewSet):
         else :
            return JsonResponse({'msg': "Item has not been found"}, status = 400) 
         
-
-
-class ItemView(viewsets.ModelViewSet):
+class ItemViewPublic(viewsets.ModelViewSet):
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
+
+    def get_items(self, request):
+        try:
+            items = Item.objects.all().values()  
+            return JsonResponse({'items': list(items)})
+        except Exception as e:
+            print(f"Error in get_items: {e}")
+            return HttpResponseServerError({'error': 'Server error occurred '+ str(e)})
+    
+    def search_item(self, request):  
+        try:
+            request_data = json.loads(request.body.decode('utf-8'))
+
+            search_term = request_data.get('SearchTerm', '')
+            print("[DEBUG]  \n",search_term,"\n")
+
+            items = Item.objects.filter(title__icontains=search_term)
+            serialized_items = ItemSerializer(items, many=True).data
+
+            return JsonResponse({'items': serialized_items})
+        
+        except Exception as e:
+            print("Error detected:\nFunction search_item(request)", e)
+            return HttpResponseServerError({'error': 'Server error occurred'})
+
+class ItemView(viewsets.ModelViewSet):
+    authentication_classes = [authentication.SessionAuthentication, JWTAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    
+    queryset = Item.objects.all()
+    serializer_class = ItemSerializer
+
+    def my_items(self, request):
+        try:
+            user = request.user
+            my_items = Item.objects.filter(user=user)
+            my_sold_items = my_items.filter(is_sold=True)
+            my_not_sold_items = my_items.filter(is_sold=False)
+
+            response_data = {
+                "sold": list(my_sold_items.values()),
+                "not_sold": list(my_not_sold_items.values())
+            }
+
+            return JsonResponse(response_data, status=200)
+        except Exception as e:
+            print(f"Error in my_items: {e}")
+            return HttpResponseServerError({'error': 'Server error occurred '+ str(e)})
 
 class AboutMeView(APIView):
     authentication_classes = [authentication.SessionAuthentication, JWTAuthentication]
@@ -177,8 +223,6 @@ class AboutMeView(APIView):
 
 class SessionAboutMeView(AboutMeView):
     authentication_classes = [authentication.SessionAuthentication]
-
-
 
 #TO CHECK
 class ValidateCartView(APIView):
@@ -219,27 +263,6 @@ class ValidateCartView(APIView):
             success_message += " Some items could not be purchased due to insufficient stock."
 
         return JsonResponse({"message": success_message}, status=status.HTTP_200_OK)
-
-@csrf_exempt
-def search_item(request):
-    
-    try:
-        request_data = json.loads(request.body.decode('utf-8'))
-
-        search_term = request_data.get('SearchTerm', '')
-        print("[DEBUG]  \n",search_term,"\n")
-
-        items = Item.objects.filter(title__icontains=search_term)
-        serialized_items = ItemSerializer(items, many=True).data
-
-        return JsonResponse({'items': serialized_items})
-    
-    except Exception as e:
-        print("Error detected:\nFunction search_item(request)", e)
-        return HttpResponseServerError({'error': 'Server error occurred'})
-
-
-
 
 
 @csrf_exempt
@@ -295,13 +318,3 @@ def populate_db(request):
         return HttpResponseServerError({'error': 'Server error occurred'})
     
 
-    
-@csrf_exempt
-def get_items(request):
-    try : 
-        items = Item.objects.all().values()  # Convert QuerySet to a list of dictionaries
-        print(len(items))
-        return JsonResponse({'items': list(items)})
-    except Exception as e:
-        print("Error detected:\nFunction get_items(request)", e)
-        return HttpResponseServerError({'error': 'Server error occurred'})

@@ -17,6 +17,7 @@ import { BsSearch } from "react-icons/bs";
 import { BsPerson } from 'react-icons/bs';
 import { AiOutlineHeart } from 'react-icons/ai';
 import { BsBagCheck } from "react-icons/bs";
+import Badge from 'react-bootstrap/Badge';
 
 function NvBar() {
 
@@ -148,36 +149,36 @@ function NvBar() {
       try {
         
         if(isAuth){
-          const response = await fetch("/api/update-cart/", {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${tokens.access}`,
-            },
-           
-          });
-          if(response.ok)
-          {
-              const data = await response.json();
-              console.log("[RETURNED DATA QUERY CART: ", data.items, )
-              setItems(data.items)
-              console.log(items,data.items.length)
-              if(items.length > 0)
+              const response = await fetch("/api/update-cart/", {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${tokens.access}`,
+                },
+              
+              });
+              if(response.ok)
               {
-                console.log("Items are > 0")
+                  const data = await response.json();
+                  console.log("[RETURNED DATA QUERY CART: ", data.items, )
+                  setItems(data.items)
+                  console.log(items,data.items.length)
+                  if(items.length > 0)
+                  {
+                    console.log("Items are > 0")
 
-                  const cartDivItems = data.items.map((item, index) => (
-                    <div key={index} style={{  
-                      display: 'flex',
-                      flexDirection: 'row',
-                      marginBottom: "20px",
-                      background: "yellow"
-                    }}> Element {index}</div>
-                  ));
-                setcontent(cartDivItems);
-                console.log("cartDiv content :\n",cartDivItems)
-                setCartEmpty(false)
-              }
+                      const cartDivItems = data.items.map((item, index) => (
+                        <div key={index} style={{  
+                          display: 'flex',
+                          flexDirection: 'row',
+                          marginBottom: "20px",
+                          background: "yellow"
+                        }}> Element {index}</div>
+                      ));
+                    setcontent(cartDivItems);
+                    console.log("cartDiv content :\n",cartDivItems)
+                    setCartEmpty(false)
+                  }
               else{
                 setCartEmpty(true)
               }
@@ -275,9 +276,13 @@ function NvBar() {
  
             
             <div style={{ display: 'flex', alignItems: 'center', marginRight:"15px", cursor:"pointer",  }}> 
-                <a href='http://localhost:8080/cart' style={{textDecoration: "none", color: "inherit"}}>
-                  <BsBagCheck size={18} id="cart"/> 
-                </a> 
+  
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+      <BsBagCheck size={18} id="cart" onClick={showCart} />
+      <Badge bg="warning" style={{ position: 'absolute', bottom: -7, left: 7, fontSize:"8px", background:"yellow", color:"black" }}>
+        9
+      </Badge>
+    </div>
             </div> 
             
             <NavDropdown title={<BsPerson />} id="basic-nav-dropdown">
@@ -308,7 +313,7 @@ function NvBar() {
       style={panelStyle}>
         <AiOutlineClose 
 // @ts-ignore
-        style={closeBtnStyle} size={24} onClick={hideCart} />
+        style={closeBtnStyle} size={24} onClick={hideCart} /> 
         <div style = {{ display:'flex', 
                         flexDirection:'column',
                         alignItems:'center',
