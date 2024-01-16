@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import NvBar from './../../components/Navbar'
 import UserMenuBar from "./../../components//UserMenu";
 import FlashMessage from './../../components/FlashMessage'
+import ItemCard from './../../components/ItemCard'
 
 export default function Home() {
 
@@ -170,48 +171,46 @@ export default function Home() {
     }
   };
 
-// DEALING WITH CART ITEM ADDITION
-const [cartItems, setCartItems] = useState([]);
+  // DEALING WITH CART ITEM ADDITION
+  const [cartItems, setCartItems] = useState([]);
 
 
 
-const addItem = async (itemId) => {
-  checkAuth();
-  const tokens = getToken();
-  console.log("checkAuth: ", tokens)
-  try {
-    console.log("Inside addItem asyn, isAuth : ", isAuth)
-    if(isAuth){
-      const response = await fetch("/api/update-cart/", {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${tokens.access}`,
-        },
-        body: JSON.stringify({
-          itemId: itemId,
-        }),
-      });
-      if(response.ok)
-      {
-          showFlashMessage("Item(s) ordered",'succes')
-      } else {
-        const data = await response.json()
-        console.log(data.msg)
-          showFlashMessage("Item is no longer available",'error')
+  const addItem = async (itemId) => {
+    checkAuth();
+    const tokens = getToken();
+    console.log("checkAuth: ", tokens)
+    try {
+      console.log("Inside addItem asyn, isAuth : ", isAuth)
+      if(isAuth){
+        const response = await fetch("/api/update-cart/", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${tokens.access}`,
+          },
+          body: JSON.stringify({
+            itemId: itemId,
+          }),
+        });
+        if(response.ok)
+        {
+            showFlashMessage("Item(s) ordered",'succes')
+        } else {
+          const data = await response.json()
+          console.log(data.msg)
+            showFlashMessage("Item is no longer available",'error')
+        }
       }
+      else{
+        showFlashMessage("Only authenticated users can order item(s)",'error')
+      }
+
+    } catch (error) {
+      showFlashMessage(String(error), 'error')
+      console.error('Error occured', error);
     }
-    else{
-      showFlashMessage("Only authenticated users can order item(s)",'error')
-    }
-
-  } catch (error) {
-    showFlashMessage(String(error), 'error')
-    console.error('Error occured', error);
-  }
-};
-
-
+  };
 
 
    
@@ -255,70 +254,7 @@ const addItem = async (itemId) => {
   for (let i = 0; i < items.length; i += itemsPerColumn) {
     const columnItems = items.slice(i, i + itemsPerColumn);
     const columnCards = columnItems.map((item, index) => (
-      <div style={cardStyle}>
-      
-      <div style = {{display: 'flex',
-                flexWrap: 'wrap',
-                justifyContent: 'center',
-                alignItems: 'center',
-                  }}>
-        <img src={item.img_url} alt={item.title} style={{ background: "#F2F2F2", maxWidth: "200px", 
-                                                          maxHeight: "200px", marginTop:"0px", padding:"0px" }} />
-      </div>
-      <div>
-        <div style={{display: 'flex', flexDirection:"row", alignItems: 'center',}}>
-              <div style={{ width:"88%","fontSize": "11px", margin:"5px 0px 5px 2px", display: 'flex', flexDirection:"column"}}> <b>{item.title}</b></div>
-              <div style={{
-                            display: 'flex',
-                            cursor: 'pointer',                
-                            flexDirection:"column"
-                          }}              
-              >
-                <BiCartAdd size={18} key={item.id} onClick = {() => addItem(item.id)} />
-              </div>
-      </div>
-        <div style={{"fontSize": "8px", margin:"5px 0px 5px 2px",   
-        
-                    lineHeight: "1.5em",
-                    height: "4.2em",       /* height is 2x line-height, so two lines will display */
-                    overflow: "hidden",
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitBoxOrient: 'vertical',
-                    WebkitLineClamp: 3, 
-                    marginBottom:"10px"
-                    }}>
-              
-                      {item.description}
-        </div>
-
-        <div style = {{
-          display:'flex',
-          flexDirection:"row",
-          width:"100%",
-          fontSize: "11px",
-          marginLeft:"2px"
-        }}> 
-                <div style = {{
-                          display:'flex',
-                          flexDirection:"column",
-                          width:"50%"
-                        }}>
-                          <b> {item.price} € </b>
-                  </div>
-
-                  <div style = {{
-                        display:'flex',
-                        flexDirection:"column",
-                        alignItems: 'flex-end',
-                        width:"48%",
-                        fontSize: "10px"
-                      }}>
-                      {new Date(item.date_added).toISOString().split('T')[0]}
-                  </div>
-          </div>
-      </div>
-    </div>
+      <ItemCard key={item.id} item={item} itemFunction={addItem} />
     ));
 
     columns.push(<div style={{  

@@ -1,16 +1,12 @@
 "use client";
 
-
 import { BsSearch } from "react-icons/bs";
-import { BiCartAdd } from "react-icons/bi";
-
-
-
 import 'bootstrap/dist/css/bootstrap.css';
 import { useEffect, useState } from "react";
 import NvBar from '../../components/Navbar'
 import UserMenuBar from "../../components/UserMenu";
 import FlashMessage from '../../components/FlashMessage'
+import ItemCard  from './../../components/ItemCard'
 
 export default function Home() {
 
@@ -67,9 +63,58 @@ export default function Home() {
     }
   };
 
-  const [isHovered0, setIsHovered0] = useState(false);
-  const [isHovered1, setIsHovered1] = useState(false);
-  const [isHovered2, setIsHovered2] = useState(false);
+  const [isHoveredOnSaleFilter, setIsHoveredOnSaleFilter] = useState(false);
+  const [isHoveredSoldFilter, setIsHoveredSoldFilter] = useState(false);
+  const [isHoveredPurchasedFilter, setIsHoveredPurchasedFilter] = useState(false);
+
+  const [isOnSaleFiltered, setIsOnSaleFiltered] = useState(true);
+  const [isSoldFiltered, setIsSoldFiltered] = useState(false);
+  const [isPurchasedFiltered, setIsPurchasedFiltered] = useState(false);
+
+//CATEGORY HANDLING
+const [items, setItems] = useState([]);
+const [selectedCategory, setSelectedCategory] = useState(null);
+
+useEffect(() => {
+  fetchItems();
+}, [selectedCategory]);
+
+const fetchItems = async () => {
+  try {
+    let endpoint = '/api/my-items/';
+    
+    
+    if (selectedCategory === 'onSale') {
+      endpoint += '?is_sold=false';
+    } else if (selectedCategory === 'sold') {
+      endpoint += '?is_sold=true';
+    } else if (selectedCategory === 'purchased') {
+      
+    }
+
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        // Include any necessary headers like Authorization
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      setItems(data.items);
+    } else {
+      console.error('Failed to fetch items');
+    }
+  } catch (error) {
+    console.error('Error fetching items:', error);
+  }
+};
+
+const QueryItemsClick = (category) => {
+  setSelectedCategory(category);
+};
+
   const myItemsFilterstyles = {
     myItemsFilterMenuCtn: {
       width: '60%',
@@ -96,13 +141,16 @@ export default function Home() {
       backgroundColor: 'darkblue',
       color: 'white',
       borderRadius: '5px 0px 0px 5px',
+      cursor: 'pointer',
     },
     myItemsFilterMenu1: {
       backgroundColor: '#C0E410',
+      cursor: 'pointer',
     },
     myItemsFilterMenu2: {
       backgroundColor: '#4F9E30',
       borderRadius: '0px 5px 5px 0px',
+      cursor: 'pointer',
     },
     myItemsFilterMenuHover: {
       transform: 'scale(1.1)',
@@ -180,9 +228,44 @@ const addItem = async (itemId) => {
   }
 };
 
+const editItemItem = async (itemId) => {
+  checkAuth();
+  const tokens = getToken();
+  console.log("checkAuth: ", tokens)
+  try {
+    console.log("Inside addItem asyn, isAuth : ", isAuth)
+    if(isAuth){
+      const response = await fetch("/api/update-cart/", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${tokens.access}`,
+        },
+        body: JSON.stringify({
+          itemId: itemId,
+        }),
+      });
+      if(response.ok)
+      {
+          showFlashMessage("Item(s) ordered",'succes')
+      } else {
+        const data = await response.json()
+        console.log(data.msg)
+          showFlashMessage("Item is no longer available",'error')
+      }
+    }
+    else{
+      showFlashMessage("Only authenticated users can order item(s)",'error')
+    }
 
-   
-  const [items, setItems] = useState([]);
+  } catch (error) {
+    showFlashMessage(String(error), 'error')
+    console.error('Error occured', error);
+  }
+};
+
+  const [itemsOnSale, setItemsOnSale] = useState([]);
+  const [itemsSold, setItemsSold] = useState([]);
 
     useEffect(() => {
         checkAuth();
@@ -191,7 +274,7 @@ const addItem = async (itemId) => {
         const fetchData = async () => {
   
           try {
-              const response = await fetch("/api/my-items/", {
+              const response = await fetch("/api/my_items/", {
                   method: 'GET',
                   headers: {
                     'Content-Type': 'application/json',
@@ -203,8 +286,8 @@ const addItem = async (itemId) => {
               const data = await response.json();
               console.log(typeof data.items); // Using typeof for a quick check
               console.log(Object.keys(data.items).length);
-              setItems(data.items);
-              console.log(data.items)
+              setItems(data.items.not_sold);
+              console.log(data.items.not_sold)
           } catch (error) {
               console.error('Error fetching items:', error);
           }
@@ -231,77 +314,14 @@ const addItem = async (itemId) => {
 
   
   const itemsPerColumn = 6;
-  const columns = [];
+  const displayContentItems = [];
   for (let i = 0; i < items.length; i += itemsPerColumn) {
     const columnItems = items.slice(i, i + itemsPerColumn);
     const columnCards = columnItems.map((item, index) => (
-      <div style={cardStyle}>
-      
-      <div style = {{display: 'flex',
-                flexWrap: 'wrap',
-                justifyContent: 'center',
-                alignItems: 'center',
-                  }}>
-        <img src={item.img_url} alt={item.title} style={{ background: "#F2F2F2", maxWidth: "200px", 
-                                                          maxHeight: "200px", marginTop:"0px", padding:"0px" }} />
-      </div>
-      <div>
-        <div style={{display: 'flex', flexDirection:"row", alignItems: 'center',}}>
-              <div style={{ width:"88%","fontSize": "11px", margin:"5px 0px 5px 2px", display: 'flex', flexDirection:"column"}}> <b>{item.title}</b></div>
-              <div style={{
-                            display: 'flex',
-                            cursor: 'pointer',                
-                            flexDirection:"column"
-                          }}              
-              >
-                <BiCartAdd size={18} key={item.id} onClick = {() => addItem(item.id)} />
-              </div>
-      </div>
-        <div style={{"fontSize": "8px", margin:"5px 0px 5px 2px",   
-        
-                    lineHeight: "1.5em",
-                    height: "4.2em",       /* height is 2x line-height, so two lines will display */
-                    overflow: "hidden",
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitBoxOrient: 'vertical',
-                    WebkitLineClamp: 3, 
-                    marginBottom:"10px"
-                    }}>
-              
-                      {item.description}
-        </div>
-
-        <div style = {{
-          display:'flex',
-          flexDirection:"row",
-          width:"100%",
-          fontSize: "11px",
-          marginLeft:"2px"
-        }}> 
-                <div style = {{
-                          display:'flex',
-                          flexDirection:"column",
-                          width:"50%"
-                        }}>
-                          <b> {item.price} € </b>
-                  </div>
-
-                  <div style = {{
-                        display:'flex',
-                        flexDirection:"column",
-                        alignItems: 'flex-end',
-                        width:"48%",
-                        fontSize: "10px"
-                      }}>
-                      {new Date(item.date_added).toISOString().split('T')[0]}
-                  </div>
-          </div>
-      </div>
-    </div>
+      <ItemCard key={item.id} item={item} itemFunction={addItem} />
     ));
 
-    columns.push(<div style={{  
+    displayContentItems.push(<div style={{  
                               display: 'flex',
                               flexDirection: 'row',
                               marginBottom:"20px",  
@@ -337,58 +357,62 @@ const addItem = async (itemId) => {
             width: '98%',
           }}>
 
-<div style={myItemsFilterstyles.myItemsFilterMenuCtn}>
-      <div
-        style={{
-          ...myItemsFilterstyles.myItemsFilterMenu,
-          ...myItemsFilterstyles.myItemsFilterMenu0,
-          ...(isHovered0 && myItemsFilterstyles.myItemsFilterMenuHover),
-        }}
-        onMouseEnter={() => setIsHovered0(true)}
-        onMouseLeave={() => setIsHovered0(false)}
-      >
-        Selling items
-      </div>
-      <div
-        style={{
-          ...myItemsFilterstyles.myItemsFilterMenu,
-          ...myItemsFilterstyles.myItemsFilterMenu1,
-          ...(isHovered1 && myItemsFilterstyles.myItemsFilterMenuHover),
-        }}
-        onMouseEnter={() => setIsHovered1(true)}
-        onMouseLeave={() => setIsHovered1(false)}
-      >
-        Sold items
-      </div>
-      <div
-        style={{
-          ...myItemsFilterstyles.myItemsFilterMenu,
-          ...myItemsFilterstyles.myItemsFilterMenu2,
-          ...(isHovered2 && myItemsFilterstyles.myItemsFilterMenuHover),
-        }}
-        onMouseEnter={() => setIsHovered2(true)}
-        onMouseLeave={() => setIsHovered2(false)}
-      >
-        Ordered items
-      </div>
-    </div>
-            
-            <div
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                justifyContent: 'center',
-                alignItems: 'center',
-                margin: '15px', 
-              }}
-            >
-              {columns}
-
-            </div>
-            </div>
-
-            <a href="/">Back</a>
+          <div style={myItemsFilterstyles.myItemsFilterMenuCtn}>
+                <div
+                  style={{
+                    ...myItemsFilterstyles.myItemsFilterMenu,
+                    ...myItemsFilterstyles.myItemsFilterMenu0,
+                    ...(isHoveredOnSaleFilter && myItemsFilterstyles.myItemsFilterMenuHover),
+                  }}
+                  onMouseEnter={() => setIsHoveredOnSaleFilter(true)}
+                  onMouseLeave={() => setIsHoveredOnSaleFilter(false)}
+                  onClick={() => QueryItemsClick('onSale')}
+                >
+                  On sale
+                </div>
+                <div
+                  style={{
+                    ...myItemsFilterstyles.myItemsFilterMenu,
+                    ...myItemsFilterstyles.myItemsFilterMenu1,
+                    ...(isHoveredSoldFilter && myItemsFilterstyles.myItemsFilterMenuHover),
+                  }}
+                  onMouseEnter={() => setIsHoveredSoldFilter(true)}
+                  onMouseLeave={() => setIsHoveredSoldFilter(false)}
+                  onClick={() => QueryItemsClick('Sold')}
+                >
+                  Sold
+                </div>
+                <div
+                  style={{
+                    ...myItemsFilterstyles.myItemsFilterMenu,
+                    ...myItemsFilterstyles.myItemsFilterMenu2,
+                    ...(isHoveredPurchasedFilter && myItemsFilterstyles.myItemsFilterMenuHover),
+                  }}
+                  onMouseEnter={() => setIsHoveredPurchasedFilter(true)}
+                  onMouseLeave={() => setIsHoveredPurchasedFilter(false)}
+                  onClick={() => QueryItemsClick('Purchased')}
+                >
+                  Purchased
+                </div>
           </div>
+
+      </div>
+
+      <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              alignItems: 'center',
+              margin: '15px', 
+            }}
+          >
+            {displayContentItems}
+
+          </div>
+            
+</div>
+
 
 
 

@@ -192,14 +192,14 @@ class ItemViewPublic(viewsets.ModelViewSet):
 class ItemView(viewsets.ModelViewSet):
     authentication_classes = [authentication.SessionAuthentication, JWTAuthentication]
     permission_classes = [permissions.IsAuthenticated]
-    
+
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
 
-    def my_items(self, request):
+    def list(self, request):
+        user = request.user
         try:
-            user = request.user
-            my_items = Item.objects.filter(user=user)
+            my_items = Item.objects.filter(seller=user)
             my_sold_items = my_items.filter(is_sold=True)
             my_not_sold_items = my_items.filter(is_sold=False)
 
@@ -208,10 +208,75 @@ class ItemView(viewsets.ModelViewSet):
                 "not_sold": list(my_not_sold_items.values())
             }
 
-            return JsonResponse(response_data, status=200)
+            return JsonResponse({'items': response_data}, status=200)
         except Exception as e:
             print(f"Error in my_items: {e}")
             return HttpResponseServerError({'error': 'Server error occurred '+ str(e)})
+    
+    def create(self, request):
+        if not request.user.is_authenticated:
+            return JsonResponse({'msg': 'Only authenticated users'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+       
+        added_id = request.data["itemId"]
+
+        user = request.user
+        print("User id : ",user.id)
+        print('Item ID : ', added_id )
+        
+        serializer_data = {
+            'added_by': user.id,
+            'added_item': added_id,  
+        }
+        serializer = self.serializer_class(data= serializer_data)
+
+        print("Serializer ",serializer, "\n Is valid: ", serializer.is_valid() )
+
+        if not serializer.is_valid():
+            print("[DEBUG] ", "Serializer not valid")
+            return JsonResponse({'msg': "not valid"}, status = 400)
+        
+        print(serializer.data["added_by"],serializer.data["added_item"])
+        
+        try:
+            
+            item = Item.objects.get(id=serializer.data["added_item"])
+            print(item)
+            
+            CartModel.objects.create(added_by = user,
+                                    added_item = item)
+            return JsonResponse({'msg': "Unable to add item"}, status = 200)
+        
+        except Exception as e:
+            print("[DEBUG ERROR ADD]\n", e)
+            return JsonResponse({'msg': str("Unable to add item due to "+ str(e))}, status = 200)
+        
+    def remove(self, request):
+        added_id = request.data["itemId"]
+        user = request.user
+        print("User id : ",user.id)
+        print('Item ID : ', added_id )
+        
+        serializer_data = {
+            'added_by': user.id,
+            'added_item': added_id,  
+        }
+        serializer = self.serializer_class(data= serializer_data)
+
+        print("Serializer ",serializer, "\n Is valid: ", serializer.is_valid() )
+
+        if not serializer.is_valid():
+            print("[DEBUG] ", "Serializer not valid")
+            return JsonResponse({'msg': "not valid"}, status = 400)
+        item = Item.objects.get(id=serializer.data["added_item"])
+        cart_item = CartModel.objects.filter(added_by = user, added_item = item).first()
+        print("[DEBUG delete Item] : ", cart_item)
+        if cart_item:
+            cart_item.delete()
+            return JsonResponse({'msg': "Item deleted successfully"}, status = 200)
+        else :
+           return JsonResponse({'msg': "Item has not been found"}, status = 400) 
+      
 
 class AboutMeView(APIView):
     authentication_classes = [authentication.SessionAuthentication, JWTAuthentication]

@@ -13,7 +13,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include(router.urls)),
     path("api/search/", views.ItemViewPublic.as_view({'post': 'search_item'}), name='search-item-view'),
-    path('api/my-items/', views.ItemView.as_view({'get': 'myitems'}), name='myitem-view'),
+    path('api/my_items/', views.ItemView.as_view({'get': 'list','post': 'create', 'delete':"remove"}), name='myitem-view'),
     path('api/get_items/', views.ItemViewPublic.as_view({'get': 'get_items'}), name='all-item-view'),
     path('api/populate_db/', views.populate_db, name='populate_db'),
     path("api/me/", views.AboutMeView.as_view()),
