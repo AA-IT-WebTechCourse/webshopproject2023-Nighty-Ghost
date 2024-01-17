@@ -13,7 +13,7 @@ const ItemCard = ({ item, itemFunction }) => {
   let iconComponent;
 
 switch (functionName) {
-  case 'addItem':
+  case 'addItemToCart':
     iconComponent = <BiCartAdd size={18} key={item.id} onClick={() => itemFunction(item.id)} />;
     break;
   case 'editItem':

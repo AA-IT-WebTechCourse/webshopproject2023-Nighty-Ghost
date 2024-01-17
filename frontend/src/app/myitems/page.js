@@ -1,12 +1,15 @@
 "use client";
-
-import { BsSearch } from "react-icons/bs";
+import { Modal } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.css';
+import { Button, Container, Form, Nav, Card, Row, Col, } from 'react-bootstrap';
 import { useEffect, useState } from "react";
 import NvBar from '../../components/Navbar'
 import UserMenuBar from "../../components/UserMenu";
 import FlashMessage from '../../components/FlashMessage'
 import ItemCard  from './../../components/ItemCard'
+import ItemModal  from './../../components/addNewItem'
+import { IoIosAddCircleOutline } from "react-icons/io";
+import { BsSearch } from "react-icons/bs";
 
 export default function Home() {
 
@@ -23,6 +26,18 @@ export default function Home() {
     setFlashMessage(null);
   };
 
+  const [showModal, setShowModal] = useState(false);
+
+  const openModalNewItem = () => {
+    setShowModal(true);
+    console.log(showModal)
+  };
+
+  const closeModalNewItem = () => {
+    setShowModal(false);
+    console.log(showModal)
+  };
+  
   const getToken = () => {
 
     if (typeof window !== 'undefined') {
@@ -71,56 +86,58 @@ export default function Home() {
   const [isSoldFiltered, setIsSoldFiltered] = useState(false);
   const [isPurchasedFiltered, setIsPurchasedFiltered] = useState(false);
 
-//CATEGORY HANDLING
-const [items, setItems] = useState([]);
-const [selectedCategory, setSelectedCategory] = useState(null);
+  //CATEGORY HANDLING
+  const [items, setItems] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
-useEffect(() => {
-  fetchItems();
-}, [selectedCategory]);
+  useEffect(() => {
+    fetchItems();
+  }, [selectedCategory]);
 
-const fetchItems = async () => {
-  try {
-    let endpoint = '/api/my-items/';
-    
-    
-    if (selectedCategory === 'onSale') {
-      endpoint += '?is_sold=false';
-    } else if (selectedCategory === 'sold') {
-      endpoint += '?is_sold=true';
-    } else if (selectedCategory === 'purchased') {
+
+  //DEAL WITH NOT AuTHENTIFICATED
+  const fetchItems = async () => {
+    try {
+      let endpoint = '/api/my-items/';
       
+      
+      if (selectedCategory === 'onSale') {
+        endpoint += '?is_sold=false';
+      } else if (selectedCategory === 'sold') {
+        endpoint += '?is_sold=true';
+      } else if (selectedCategory === 'purchased') {
+        
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          // Include any necessary headers like Authorization
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setItems(data.items);
+      } else {
+        console.error('Failed to fetch items');
+      }
+    } catch (error) {
+      console.error('Error fetching items:', error);
     }
+  };
 
-    const response = await fetch(endpoint, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        // Include any necessary headers like Authorization
-      },
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      setItems(data.items);
-    } else {
-      console.error('Failed to fetch items');
-    }
-  } catch (error) {
-    console.error('Error fetching items:', error);
-  }
-};
-
-const QueryItemsClick = (category) => {
-  setSelectedCategory(category);
-};
+  const QueryItemsClick = (category) => {
+    setSelectedCategory(category);
+  };
 
   const myItemsFilterstyles = {
     myItemsFilterMenuCtn: {
       width: '60%',
-      margin: 'auto',
       display: 'flex',
       alignContent: 'stretch',
+      marginTop:"40px",
     },
     myItemsFilterMenu: {
       display: 'inline-block',
@@ -128,7 +145,7 @@ const QueryItemsClick = (category) => {
       flex: 1,
       color: 'whitesmoke',
       textDecoration: 'none',
-      textAlign: 'center',
+      //textAlign: 'center' as 'center',
       fontWeight: 600,
       lineHeight: '30px',
       verticalAlign: 'middle',
@@ -192,77 +209,110 @@ const QueryItemsClick = (category) => {
     }
   };
 
-const addItem = async (itemId) => {
-  checkAuth();
-  const tokens = getToken();
-  console.log("checkAuth: ", tokens)
-  try {
-    console.log("Inside addItem asyn, isAuth : ", isAuth)
-    if(isAuth){
-      const response = await fetch("/api/update-cart/", {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${tokens.access}`,
-        },
-        body: JSON.stringify({
-          itemId: itemId,
-        }),
-      });
-      if(response.ok)
-      {
-          showFlashMessage("Item(s) ordered",'succes')
-      } else {
-        const data = await response.json()
-        console.log(data.msg)
-          showFlashMessage("Item is no longer available",'error')
+  const addItemToCart = async (itemId) => {
+    checkAuth();
+    const tokens = getToken();
+    console.log("checkAuth: ", tokens)
+    try {
+      console.log("Inside addItemToCart asyn, isAuth : ", isAuth)
+      if(isAuth){
+        const response = await fetch("/api/update-cart/", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${tokens.access}`,
+          },
+          body: JSON.stringify({
+            itemId: itemId,
+          }),
+        });
+        if(response.ok)
+        {
+            showFlashMessage("Item(s) ordered",'succes')
+        } else {
+          const data = await response.json()
+          console.log(data.msg)
+            showFlashMessage("Item is no longer available",'error')
+        }
       }
-    }
-    else{
-      showFlashMessage("Only authenticated users can order item(s)",'error')
-    }
-
-  } catch (error) {
-    showFlashMessage(String(error), 'error')
-    console.error('Error occured', error);
-  }
-};
-
-const editItemItem = async (itemId) => {
-  checkAuth();
-  const tokens = getToken();
-  console.log("checkAuth: ", tokens)
-  try {
-    console.log("Inside addItem asyn, isAuth : ", isAuth)
-    if(isAuth){
-      const response = await fetch("/api/update-cart/", {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${tokens.access}`,
-        },
-        body: JSON.stringify({
-          itemId: itemId,
-        }),
-      });
-      if(response.ok)
-      {
-          showFlashMessage("Item(s) ordered",'succes')
-      } else {
-        const data = await response.json()
-        console.log(data.msg)
-          showFlashMessage("Item is no longer available",'error')
+      else{
+        showFlashMessage("Only authenticated users can order item(s)",'error')
       }
-    }
-    else{
-      showFlashMessage("Only authenticated users can order item(s)",'error')
-    }
 
-  } catch (error) {
-    showFlashMessage(String(error), 'error')
-    console.error('Error occured', error);
-  }
-};
+    } catch (error) {
+      showFlashMessage(String(error), 'error')
+      console.error('Error occured', error);
+    }
+  };
+
+  const editItem = async (itemId) => {
+    checkAuth();
+    const tokens = getToken();
+    console.log("checkAuth: ", tokens)
+    try {
+      console.log("Inside addItemToCart asyn, isAuth : ", isAuth)
+      if(isAuth){
+        const response = await fetch("/api/update-cart/", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${tokens.access}`,
+          },
+          body: JSON.stringify({
+            itemId: itemId,
+          }),
+        });
+        if(response.ok)
+        {
+            showFlashMessage("Item(s) ordered",'succes')
+        } else {
+          const data = await response.json()
+          console.log(data.msg)
+            showFlashMessage("Item is no longer available",'error')
+        }
+      }
+      else{
+        showFlashMessage("Only authenticated users can order item(s)",'error')
+      }
+
+    } catch (error) {
+      showFlashMessage(String(error), 'error')
+      console.error('Error occured', error);
+    }
+  };
+
+  const addNewItem = async () => {
+    checkAuth();
+    const tokens = getToken();
+    console.log("checkAuth: ", tokens)
+    try {
+      if(isAuth){
+        const response = await fetch("/api/my_items/", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${tokens.access}`,
+          },
+        });
+        if(response.ok)
+        {
+            showFlashMessage("Item added",'succes')
+        } else {
+          const data = await response.json()
+          console.log(data.msg)
+            showFlashMessage("Item has not been added ",'error')
+        }
+      }
+      else{
+        showFlashMessage("Only authenticated users can order item(s)",'error')
+      }
+
+    } catch (error) {
+      showFlashMessage(String(error), 'error')
+      console.error('Error occured', error);
+    }
+  };
+
 
   const [itemsOnSale, setItemsOnSale] = useState([]);
   const [itemsSold, setItemsSold] = useState([]);
@@ -318,7 +368,7 @@ const editItemItem = async (itemId) => {
   for (let i = 0; i < items.length; i += itemsPerColumn) {
     const columnItems = items.slice(i, i + itemsPerColumn);
     const columnCards = columnItems.map((item, index) => (
-      <ItemCard key={item.id} item={item} itemFunction={addItem} />
+      <ItemCard key={item.id} item={item} itemFunction={addItemToCart} />
     ));
 
     displayContentItems.push(<div style={{  
@@ -353,7 +403,7 @@ const editItemItem = async (itemId) => {
             alignItems: 'center',
             justifyContent: 'center',
             margin: "5px",
-            marginBottom:"100px",
+            marginBottom:"40px",
             width: '98%',
           }}>
 
@@ -397,6 +447,18 @@ const editItemItem = async (itemId) => {
           </div>
 
       </div>
+      <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              alignItems: 'center',
+              color:'white',
+            }}>
+          <Button variant="secondary" onClick={openModalNewItem} className="mb-4"style={{ border:"none", width:"200px"}}> 
+          Add Item <IoIosAddCircleOutline />
+        </Button>
+      </div>
+      <ItemModal show={showModal} onHide={closeModalNewItem}/>
 
       <div
             style={{
@@ -407,6 +469,7 @@ const editItemItem = async (itemId) => {
               margin: '15px', 
             }}
           >
+
             {displayContentItems}
 
           </div>

@@ -97,7 +97,7 @@ export default function Home() {
           <BsFillCartCheckFill  size={18} key={itemID}  onClick={deleteItem} />
         ) : (
           
-          <AiOutlineHeart size={18} key={itemID}  onClick= {() => addItem(itemID)} />
+          <AiOutlineHeart size={18} key={itemID}  onClick= {() => addItemToCart(itemID)} />
         )}
       </div>
     );
@@ -176,12 +176,12 @@ export default function Home() {
 
 
 
-  const addItem = async (itemId) => {
+  const addItemToCart = async (itemId) => {
     checkAuth();
     const tokens = getToken();
     console.log("checkAuth: ", tokens)
     try {
-      console.log("Inside addItem asyn, isAuth : ", isAuth)
+      console.log("Inside addItemToCart asyn, isAuth : ", isAuth)
       if(isAuth){
         const response = await fetch("/api/update-cart/", {
           method: 'POST',
@@ -254,7 +254,7 @@ export default function Home() {
   for (let i = 0; i < items.length; i += itemsPerColumn) {
     const columnItems = items.slice(i, i + itemsPerColumn);
     const columnCards = columnItems.map((item, index) => (
-      <ItemCard key={item.id} item={item} itemFunction={addItem} />
+      <ItemCard key={item.id} item={item} itemFunction={addItemToCart} />
     ));
 
     columns.push(<div style={{  

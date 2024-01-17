@@ -20,7 +20,7 @@ export default function Home() {
     setFlashMessage(null);
   };
 
-  const handleCreateUsersAndItems = async () => {
+  const automationUserItems = async () => {
     try {
       const response = await fetch('api/populate_db/', {
         method: 'POST',
@@ -84,7 +84,7 @@ export default function Home() {
               </div>
 
               <div>
-                <Button variant="dark" className="mb-4" onClick={handleCreateUsersAndItems} style={{ border:"none", width:"200px"}}>
+                <Button variant="dark" className="mb-4" onClick={automationUserItems} style={{ border:"none", width:"200px"}}>
                   Populate Database
                 </Button>
               </div>

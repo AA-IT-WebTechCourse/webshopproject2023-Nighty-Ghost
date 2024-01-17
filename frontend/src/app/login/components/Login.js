@@ -93,14 +93,17 @@ function Login_Reg() {
  
 
   return (
-    <Container className="p-3 my-5 d-flex flex-column w-50">
-      {flashMessage && (
+    <div>
+      <div style={{margin:"50px"}} >{flashMessage && (
         <FlashMessage
           message={flashMessage.message}
           type={flashMessage.type}
           onClose={closeFlashMessage}
         />
       )}
+      </div>
+    <Container className="p-3 my-5 d-flex flex-column w-50">
+
       <Card className='bg-white my-5 mx-auto' style={{ borderRadius: '1rem', maxWidth: '500px', boxShadow: ' 2px 2px 13px 13px #D3D3D3',}}>
         <Card.Body className='p-5 w-100 d-flex flex-column'>
           <Form onSubmit={handleSubmit}>
@@ -151,6 +154,7 @@ function Login_Reg() {
       </div>
 
     </Container>
+    </div>
 
   );
 }
