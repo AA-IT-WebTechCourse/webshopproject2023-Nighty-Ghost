@@ -15,12 +15,12 @@ const FlashMessage = ({ message, type, onClose }) => {
   return (
     <div style={{ display: isVisible ? 'block' : 'none', 
                   borderRadius: '5px',position: 'fixed',
-                  top: '10%',
+                  top: '5%',
                   left: '50%',
                   transform: 'translate(-50%, -50%)',
                   padding: '20px',
                   zIndex: 1000, 
-                  width:"110px",
+                  width:"1100px",
                   backgroundColor: type === 'error' ? '#F84F31' : '#23C552', 
                   color: 'white', textAlign: 'center' }}>
       {message}

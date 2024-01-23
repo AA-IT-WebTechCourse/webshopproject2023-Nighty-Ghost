@@ -34,7 +34,7 @@ function Login_Reg() {
     setFlashMessage(null);
   };
 
-  const handleLogin = async () => {
+  const loginForm = async () => {
     try {
       console.log("Submit cliked")
       console.log("Username : ",username)
@@ -77,9 +77,9 @@ function Login_Reg() {
     }
   };
 
-  const handleSubmit = async (event) => {
+  const SubmitForm = async (event) => {
     event.preventDefault();
-    await handleLogin();
+    await loginForm();
   };
 
 
@@ -94,7 +94,7 @@ function Login_Reg() {
 
   return (
     <div>
-      <div style={{margin:"50px"}} >{flashMessage && (
+      <div style={{margin:"50px", width:"1500px"}} >{flashMessage && (
         <FlashMessage
           message={flashMessage.message}
           type={flashMessage.type}
@@ -106,7 +106,7 @@ function Login_Reg() {
 
       <Card className='bg-white my-5 mx-auto' style={{ borderRadius: '1rem', maxWidth: '500px', boxShadow: ' 2px 2px 13px 13px #D3D3D3',}}>
         <Card.Body className='p-5 w-100 d-flex flex-column'>
-          <Form onSubmit={handleSubmit}>
+          <Form onSubmit={SubmitForm}>
             <div className="mb-4">
               <FaFacebookF className="m-1" />
               <FaTwitter className="m-1" />
@@ -122,7 +122,7 @@ function Login_Reg() {
             </Form.Group>
 
           
-            <Button variant="dark" className="mb-4 w-100"  onClick={handleLogin} type="submit">
+            <Button variant="dark" className="mb-4 w-100"  onClick={loginForm} type="submit">
               Sign in
             </Button>
           

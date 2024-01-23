@@ -1,7 +1,10 @@
 "use client";
+// @ts-ignore
 import { Modal } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.css';
+// @ts-ignore
 import { Button, Container, Form, Nav, Card, Row, Col, } from 'react-bootstrap';
+
 import { useEffect, useState } from "react";
 import NvBar from '../../components/Navbar'
 import UserMenuBar from "../../components/UserMenu";
@@ -9,10 +12,12 @@ import FlashMessage from '../../components/FlashMessage'
 import ItemCard  from './../../components/ItemCard'
 import ItemModal  from './../../components/addNewItem'
 import { IoIosAddCircleOutline } from "react-icons/io";
+// @ts-ignore
 import { BsSearch } from "react-icons/bs";
 
 export default function Home() {
 
+  // @ts-ignore
   const [cart, setCart] = useState([]);
   const TOKEN_KEY = "tokens"
   const [isAuth, setisAuth] = useState(false);
@@ -38,6 +43,8 @@ export default function Home() {
     console.log(showModal)
   };
   
+
+
   const getToken = () => {
 
     if (typeof window !== 'undefined') {
@@ -82,8 +89,11 @@ export default function Home() {
   const [isHoveredSoldFilter, setIsHoveredSoldFilter] = useState(false);
   const [isHoveredPurchasedFilter, setIsHoveredPurchasedFilter] = useState(false);
 
+  // @ts-ignore
   const [isOnSaleFiltered, setIsOnSaleFiltered] = useState(true);
+  // @ts-ignore
   const [isSoldFiltered, setIsSoldFiltered] = useState(false);
+  // @ts-ignore
   const [isPurchasedFiltered, setIsPurchasedFiltered] = useState(false);
 
   //CATEGORY HANDLING
@@ -113,7 +123,7 @@ export default function Home() {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          // Include any necessary headers like Authorization
+          
         },
       });
 
@@ -145,7 +155,8 @@ export default function Home() {
       flex: 1,
       color: 'whitesmoke',
       textDecoration: 'none',
-      //textAlign: 'center' as 'center',
+      justifyContent: "center",
+      textAlign: 'center',
       fontWeight: 600,
       lineHeight: '30px',
       verticalAlign: 'middle',
@@ -175,7 +186,7 @@ export default function Home() {
     },
   };
 
-  // DELETE ITEM FROM CART
+  // @ts-ignore
   const deleteItem = async (itemId) => {
     checkAuth();
     const tokens = getToken()
@@ -245,6 +256,7 @@ export default function Home() {
     }
   };
 
+  // @ts-ignore
   const editItem = async (itemId) => {
     checkAuth();
     const tokens = getToken();
@@ -281,6 +293,7 @@ export default function Home() {
     }
   };
 
+  // @ts-ignore
   const addNewItem = async () => {
     checkAuth();
     const tokens = getToken();
@@ -314,7 +327,9 @@ export default function Home() {
   };
 
 
+  // @ts-ignore
   const [itemsOnSale, setItemsOnSale] = useState([]);
+  // @ts-ignore
   const [itemsSold, setItemsSold] = useState([]);
 
     useEffect(() => {
@@ -346,6 +361,7 @@ export default function Home() {
         fetchData();
     }, [])
 
+  // @ts-ignore
   const cardStyle = {
     
     width: "202px",
@@ -367,8 +383,9 @@ export default function Home() {
   const displayContentItems = [];
   for (let i = 0; i < items.length; i += itemsPerColumn) {
     const columnItems = items.slice(i, i + itemsPerColumn);
+    // @ts-ignore
     const columnCards = columnItems.map((item, index) => (
-      <ItemCard key={item.id} item={item} itemFunction={addItemToCart} />
+      <ItemCard key={item.id} item={item} itemFunction={editItem} />
     ));
 
     displayContentItems.push(<div style={{  
@@ -409,6 +426,7 @@ export default function Home() {
 
           <div style={myItemsFilterstyles.myItemsFilterMenuCtn}>
                 <div
+                  // @ts-ignore
                   style={{
                     ...myItemsFilterstyles.myItemsFilterMenu,
                     ...myItemsFilterstyles.myItemsFilterMenu0,
@@ -421,6 +439,7 @@ export default function Home() {
                   On sale
                 </div>
                 <div
+                  // @ts-ignore
                   style={{
                     ...myItemsFilterstyles.myItemsFilterMenu,
                     ...myItemsFilterstyles.myItemsFilterMenu1,
@@ -433,6 +452,7 @@ export default function Home() {
                   Sold
                 </div>
                 <div
+                  // @ts-ignore
                   style={{
                     ...myItemsFilterstyles.myItemsFilterMenu,
                     ...myItemsFilterstyles.myItemsFilterMenu2,

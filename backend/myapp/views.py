@@ -2,6 +2,7 @@ from django.db import IntegrityError
 from django.conf import settings
 from django.shortcuts import render
 from django.http import HttpResponse,JsonResponse, HttpResponseServerError
+from rest_framework import serializers
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from django.contrib.auth.models import User
@@ -18,6 +19,10 @@ import json, os
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime, timedelta
 from django.utils import timezone
+from django.core.files.storage import default_storage
+from urllib.parse import unquote
+import random
+import base64
 
 # @authentication_classes([JWTAuthentication])
 # @permission_classes([IsAuthenticated])
@@ -195,61 +200,116 @@ class ItemView(viewsets.ModelViewSet):
 
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
+    img_upload = serializers.ImageField(required=False)
+
+    def get_image_data(self, obj):
+        if obj.get('img_url'):
+            return obj['img_url'] 
+        elif obj.get('img_upload'):
+            #obj['img_upload'] is like : /item_images/Capture_décran_tab_option.png
+            print("spliT : ", obj['img_upload'].split('/')) 
+
+            print("MEDIA FOLDER : ", settings.MEDIA_ROOT)
+            _, folder, img_name = obj['img_upload'].split('/')
+            #img_path = os.path.join(settings.MEDIA_ROOT, folder, img_name)
+            img_path = os.path.join(settings.BASE_DIR, folder, unquote(img_name))
+            with open(img_path, 'rb') as image_file:
+                encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
+                print(obj['img_upload'].split("."))
+                file_extension = obj['img_upload'].split(".")[1]
+                content_type = f'image/{file_extension.lower()}'
+                print("CONTENT TYPE IS ",content_type)
+                return f'data:{content_type};base64,{encoded_image}'
+        else:
+            return None
+
 
     def list(self, request):
         user = request.user
-        try:
-            my_items = Item.objects.filter(seller=user)
-            my_sold_items = my_items.filter(is_sold=True)
-            my_not_sold_items = my_items.filter(is_sold=False)
+        #try:
+        my_items = Item.objects.filter(seller=user)
+        my_sold_items = my_items.filter(is_sold=True)
+        my_not_sold_items = my_items.filter(is_sold=False)
+        
+        serialized_sold_items = self.serializer_class(my_sold_items, many=True).data
+        
+        serialized_not_sold_items = self.serializer_class(my_not_sold_items, many=True).data
+        
+        for item in serialized_sold_items:
+            item['image'] = self.get_image_data(item)
 
-            response_data = {
-                "sold": list(my_sold_items.values()),
-                "not_sold": list(my_not_sold_items.values())
-            }
+        for item in serialized_not_sold_items:
+            item['image'] = self.get_image_data(item)
 
-            return JsonResponse({'items': response_data}, status=200)
-        except Exception as e:
-            print(f"Error in my_items: {e}")
-            return HttpResponseServerError({'error': 'Server error occurred '+ str(e)})
+
+        response_data = {
+            "sold": serialized_sold_items,
+            "not_sold": serialized_not_sold_items
+        }
+        print("END LIST ITEMS")
+
+        return JsonResponse({'items': response_data}, status=200)
+        #except Exception as e:
+            # print(f"Error in my_items: {e}")
+            # return HttpResponseServerError({'error': 'Server error occurred '+ str(e)})
+    
+    # def get_image_data(self, item):
+    #     img_url = item.get('img_url')
+    #     img_upload = item.get('img_upload')
+
+    #     if img_url != None:
+    #         #print(img_url)
+    #         return img_url
+    #     elif img_upload :
+    #         print(img_upload, "\n", type(img_upload))
+    #         with open(img_upload, 'rb') as image_file:
+    #             encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
+    #             print("Encoded img : ", encoded_image)
+    #             return f'data:image/jpeg;base64,{encoded_image}'
+    #     else:
+    #         return None
     
     def create(self, request):
         if not request.user.is_authenticated:
             return JsonResponse({'msg': 'Only authenticated users'}, status=status.HTTP_401_UNAUTHORIZED)
         
-       
-        added_id = request.data["itemId"]
 
+        print("\nrequestion data: ",request.data )
         user = request.user
-        print("User id : ",user.id)
-        print('Item ID : ', added_id )
-        
+        print("[DEBUG CREATE NEW ITEM]\nUser id : ",user.id)
+        print(request, "\nrequestion data: ", request.data)
+        print("Ttile : ", request.data['title'])
+        print("description : ", request.data['description'])
+        print("price : ", request.data['price'])
+        print("file : ", request.data['file'], type(request.data['file']))
+        print("Quantity : ", request.data['quantity'], type(request.data['quantity']))
+
         serializer_data = {
-            'added_by': user.id,
-            'added_item': added_id,  
+            'title': request.data['title'],
+            'description': request.data['description'],
+            'price' : float(request.data['price']), 
+            'seller': user.id,
+            'item_quantity': int(request.data['quantity']),  
         }
-        serializer = self.serializer_class(data= serializer_data)
+        if request.data['url'] != '' :
+            serializer_data['img_url'] = request.data['url']
+        else :  
+        
+            serializer_data['img_upload'] = request.data['file']
 
-        print("Serializer ",serializer, "\n Is valid: ", serializer.is_valid() )
+        serializer = ItemSerializer(data=serializer_data)
+        print(serializer)
+        print("Is serialize valid ? ",serializer.is_valid() )
+        if serializer.is_valid():
+            serializer.save()
+            print("Valid")
+            return Response({'message': 'Item added successfully'}, status=status.HTTP_201_CREATED)
+        else:
+            print(serializer.errors)
+            return Response({'error': 'Invalid serializer data'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not serializer.is_valid():
-            print("[DEBUG] ", "Serializer not valid")
-            return JsonResponse({'msg': "not valid"}, status = 400)
-        
-        print(serializer.data["added_by"],serializer.data["added_item"])
-        
-        try:
-            
-            item = Item.objects.get(id=serializer.data["added_item"])
-            print(item)
-            
-            CartModel.objects.create(added_by = user,
-                                    added_item = item)
-            return JsonResponse({'msg': "Unable to add item"}, status = 200)
-        
-        except Exception as e:
-            print("[DEBUG ERROR ADD]\n", e)
-            return JsonResponse({'msg': str("Unable to add item due to "+ str(e))}, status = 200)
+
+
         
     def remove(self, request):
         added_id = request.data["itemId"]
@@ -368,7 +428,7 @@ def populate_db(request):
                         price = float(item["listPrice"])
                         category = item["category"]
                         img_url = item["imageUrl"]
-                        Item.objects.create(title=title, description=description, price=price, img_url=img_url, seller=user, auto_add = True)
+                        Item.objects.create(title=title, description=description, price=price, img_url=img_url, seller=user, item_quantity = random.randint(1,5))
                         #Item.objects.create(title=title, description=description, category=category,price=price, img_url=img_url, seller=user, auto_add = True)
                     
 

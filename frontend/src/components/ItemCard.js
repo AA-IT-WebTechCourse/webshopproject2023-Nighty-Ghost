@@ -1,53 +1,74 @@
 import React from 'react';
 import { BiCartAdd } from 'react-icons/bi';
-import { LiaEditSolid } from "react-icons/lia";
-import { RiDeleteBin2Line } from "react-icons/ri";
-import { useEffect, useState } from "react";
+import { LiaEditSolid } from 'react-icons/lia';
+import { RiDeleteBin2Line } from 'react-icons/ri';
+import { useEffect, useState } from 'react';
+
 const ItemCard = ({ item, itemFunction }) => {
-  
   const [isAddFunction, setIsAddFunction] = useState(false);
   const [isDeleteFunction, setIsDeleteFunction] = useState(false);
   const [isEditFunction, setIsEditFunction] = useState(false);
-  
-  const functionName = itemFunction.name
+
+  const functionName = itemFunction.name;
   let iconComponent;
 
-switch (functionName) {
-  case 'addItemToCart':
-    iconComponent = <BiCartAdd size={18} key={item.id} onClick={() => itemFunction(item.id)} />;
-    break;
-  case 'editItem':
-    iconComponent = <LiaEditSolid size={18} key={item.id} onClick={() => itemFunction(item.id)} />;
-    break;
-  default:
-    iconComponent = <BiCartAdd size={18} key={item.id} onClick={() => itemFunction(item.id)} />;
-}
+  switch (functionName) {
+    case 'addItemToCart':
+      iconComponent = <BiCartAdd size={18} key={item.id} onClick={() => itemFunction(item.id)} />;
+      break;
+    case 'editItem':
+      iconComponent = <LiaEditSolid size={18} key={item.id} onClick={() => itemFunction(item.id)} />;
+      break;
+    default:
+      iconComponent = <BiCartAdd size={18} key={item.id} onClick={() => itemFunction(item.id)} />;
+  }
 
   const cardStyle = {
-    width: "202px",
-    height: "295px",
-    padding: "0px",
-    margin: "6px",
-    cursor: "pointer",
-    fontSize: "9px",
+    width: '202px',
+    height: '295px',
+    padding: '0px',
+    margin: '6px',
+    cursor: 'pointer',
+    fontSize: '9px',
   };
 
   return (
     <div style={cardStyle}>
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}>
-        <img src={item.img_url} alt={item.title} style={{
-          background: "#F2F2F2",
-          maxWidth: "200px",
-          maxHeight: "200px",
-          marginTop: "0px",
-          padding: "0px",
-        }} />
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        {item.img_url ? (
+          <img
+            src={item.img_url}
+            alt={item.title}
+            style={{
+              background: '#F2F2F2',
+              width: '200px',
+              height: '200px',
+              marginTop: '0px',
+              padding: '0px',
+            }}
+          />
+        ) : (
+          <img
+            src={`${item.image}`} 
+            alt={item.title}
+            style={{
+              background: '#F2F2F2',
+              width: '200px',
+              height: '200px',
+              marginTop: '0px',
+              padding: '0px',
+            }}
+          />
+        )}
       </div>
+      <div>
       <div>
         <div style={{ display: 'flex', flexDirection: "row", alignItems: 'center', }}>
           <div style={{
@@ -107,6 +128,8 @@ switch (functionName) {
         </div>
       </div>
     </div>
+      </div>
+ 
   );
 };
 
