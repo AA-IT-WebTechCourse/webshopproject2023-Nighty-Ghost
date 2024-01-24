@@ -176,7 +176,7 @@ export default function Home() {
 
 
 
-  const addItemToCart = async (itemId) => {
+  const addItemToCart = async (item) => {
     checkAuth();
     const tokens = getToken();
     console.log("checkAuth: ", tokens)
@@ -190,16 +190,18 @@ export default function Home() {
             'Authorization': `Bearer ${tokens.access}`,
           },
           body: JSON.stringify({
-            itemId: itemId,
+            itemId: item.id,
+            price: item.price
           }),
         });
         if(response.ok)
         {
-            showFlashMessage("Item(s) ordered",'succes')
+            showFlashMessage("Item ordered",'succes')
         } else {
           const data = await response.json()
           console.log(data.msg)
-            showFlashMessage("Item is no longer available",'error')
+          const msg = data.msg;
+            showFlashMessage(msg,'error')
         }
       }
       else{
@@ -221,7 +223,7 @@ export default function Home() {
             try {
                 const response = await fetch('api/get_items/');
                 const data = await response.json();
-                console.log(typeof data.items); // Using typeof for a quick check
+                console.log(typeof data.items); 
                 console.log(Object.keys(data.items).length);
                 setItems(data.items);
             } catch (error) {
@@ -238,11 +240,7 @@ export default function Home() {
     height: "295px",
     padding: "0px",
     margin: "6px",
-    
-    //border: "1px solid #ccc",
-    //borderRadius: "5px",
-    //boxShadow: "0px 0px 5px #666",
-    
+
     cursor: "pointer",
     fontSize: "9px"
     

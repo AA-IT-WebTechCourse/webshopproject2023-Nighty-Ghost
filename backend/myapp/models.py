@@ -17,6 +17,7 @@ class CartModel(models.Model):
     added_by = models.ForeignKey(User, on_delete=models.CASCADE,null=False)
     added_item = models.ForeignKey(Item, on_delete=models.CASCADE,null=False)
     added_item_price = models.CharField(max_length=100,blank=False, null=False)
+    #date_added
     added_time = models.DateTimeField(auto_now_add=True)
 
 class OrderItems(models.Model):

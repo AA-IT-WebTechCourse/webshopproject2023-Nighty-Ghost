@@ -7,7 +7,7 @@ const FlashMessage = ({ message, type, onClose }) => {
     const timer = setTimeout(() => {
       setIsVisible(false);
       onClose();
-    }, 3000); 
+    }, 5000); 
 
     return () => clearTimeout(timer);
   }, [onClose]);

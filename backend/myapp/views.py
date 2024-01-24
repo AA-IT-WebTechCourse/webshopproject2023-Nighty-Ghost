@@ -108,14 +108,17 @@ class CartView(viewsets.ModelViewSet):
         
        
         added_id = request.data["itemId"]
+        price_added = request.data["price"]
 
         user = request.user
         print("User id : ",user.id)
         print('Item ID : ', added_id )
+        print("Price added")
         
         serializer_data = {
             'added_by': user.id,
             'added_item': added_id,  
+            'added_item_price': price_added
         }
         serializer = self.serializer_class(data= serializer_data)
 
@@ -123,18 +126,29 @@ class CartView(viewsets.ModelViewSet):
 
         if not serializer.is_valid():
             print("[DEBUG] ", "Serializer not valid")
+            print("[DEUBG ERROR SERIALIZER IN CARTVIEW ADD] ", serializer.errors)
             return JsonResponse({'msg': "not valid"}, status = 400)
         
-        print(serializer.data["added_by"],serializer.data["added_item"])
-        
+
         try:
             
             item = Item.objects.get(id=serializer.data["added_item"])
-            print(item)
+            #print("DEBUG")
+            # print("[BUYER]", user, type(user))
+            # print("[BUYER]", user.id, type(user.id))
+            # print("[BUYER]", user.username, type(user.username))
+            # print("[SELLER] ", item.seller.id, type(item.seller.id))
+            # print("[SELLER] ", item.seller.username, type(item.seller.username))
+            if item.seller.id != user.id:
+                print("ADDED")
+                CartModel.objects.create(added_by = user,
+                                    added_item = item,
+                                    added_item_price = price_added )
+                return JsonResponse({'msg': "Item added to cart successfully"}, status = 200)
+            else:
+                print("Not ADDED")
+                return JsonResponse({'msg': " Add failed : The item belongs to you"}, status = 400)
             
-            CartModel.objects.create(added_by = user,
-                                    added_item = item)
-            return JsonResponse({'msg': "Unable to add item"}, status = 200)
         
         except Exception as e:
             print("[DEBUG ERROR ADD]\n", e)
@@ -206,7 +220,7 @@ class ItemView(viewsets.ModelViewSet):
         if obj.get('img_url'):
             return obj['img_url'] 
         elif obj.get('img_upload'):
-            #obj['img_upload'] is like : /item_images/Capture_décran_tab_option.png
+            #obj['img_upload'] looks like : /item_images/Capture_décran_tab_option.png
             print("spliT : ", obj['img_upload'].split('/')) 
 
             print("MEDIA FOLDER : ", settings.MEDIA_ROOT)
@@ -226,91 +240,110 @@ class ItemView(viewsets.ModelViewSet):
 
     def list(self, request):
         user = request.user
-        #try:
-        my_items = Item.objects.filter(seller=user)
-        my_sold_items = my_items.filter(is_sold=True)
-        my_not_sold_items = my_items.filter(is_sold=False)
+        try:
+            my_items = Item.objects.filter(seller=user)
+            my_sold_items = my_items.filter(is_sold=True)
+            my_not_sold_items = my_items.filter(is_sold=False)
+            
+            serialized_sold_items = self.serializer_class(my_sold_items, many=True).data
+            
+            serialized_not_sold_items = self.serializer_class(my_not_sold_items, many=True).data
+            
+            for item in serialized_sold_items:
+                item['image'] = self.get_image_data(item)
+
+            for item in serialized_not_sold_items:
+                item['image'] = self.get_image_data(item)
+
+
+            response_data = {
+                "sold": serialized_sold_items,
+                "not_sold": serialized_not_sold_items
+            }
+            print("END LIST ITEMS")
+            return JsonResponse({'items': response_data}, status=200)
         
-        serialized_sold_items = self.serializer_class(my_sold_items, many=True).data
-        
-        serialized_not_sold_items = self.serializer_class(my_not_sold_items, many=True).data
-        
-        for item in serialized_sold_items:
-            item['image'] = self.get_image_data(item)
-
-        for item in serialized_not_sold_items:
-            item['image'] = self.get_image_data(item)
-
-
-        response_data = {
-            "sold": serialized_sold_items,
-            "not_sold": serialized_not_sold_items
-        }
-        print("END LIST ITEMS")
-
-        return JsonResponse({'items': response_data}, status=200)
-        #except Exception as e:
-            # print(f"Error in my_items: {e}")
-            # return HttpResponseServerError({'error': 'Server error occurred '+ str(e)})
+        except Exception as e:
+            print(f"Error in my_items: {e}")
+            return HttpResponseServerError({'error': 'Server error occurred '+ str(e)})
     
-    # def get_image_data(self, item):
-    #     img_url = item.get('img_url')
-    #     img_upload = item.get('img_upload')
 
-    #     if img_url != None:
-    #         #print(img_url)
-    #         return img_url
-    #     elif img_upload :
-    #         print(img_upload, "\n", type(img_upload))
-    #         with open(img_upload, 'rb') as image_file:
-    #             encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
-    #             print("Encoded img : ", encoded_image)
-    #             return f'data:image/jpeg;base64,{encoded_image}'
-    #     else:
-    #         return None
+
     
     def create(self, request):
-        if not request.user.is_authenticated:
-            return JsonResponse({'msg': 'Only authenticated users'}, status=status.HTTP_401_UNAUTHORIZED)
         
+        try :
+            print("\nrequestion data: ",request.data )
+            user = request.user
+            print("[DEBUG CREATE NEW ITEM]\nUser id : ",user.id)
+            print(request, "\nrequestion data: ", request.data)
+            print("Ttile : ", request.data['title'])
+            print("description : ", request.data['description'])
+            print("price : ", request.data['price'])
+            print("file : ", request.data['file'], type(request.data['file']))
+            print("Quantity : ", request.data['quantity'], type(request.data['quantity']))
 
-        print("\nrequestion data: ",request.data )
-        user = request.user
-        print("[DEBUG CREATE NEW ITEM]\nUser id : ",user.id)
-        print(request, "\nrequestion data: ", request.data)
-        print("Ttile : ", request.data['title'])
-        print("description : ", request.data['description'])
-        print("price : ", request.data['price'])
-        print("file : ", request.data['file'], type(request.data['file']))
-        print("Quantity : ", request.data['quantity'], type(request.data['quantity']))
+            serializer_data = {
+                'title': request.data['title'],
+                'description': request.data['description'],
+                'price' : float(request.data['price']), 
+                'seller': user.id,
+                'item_quantity': int(request.data['quantity']),  
+            }
+            if request.data['url'] != '' :
+                serializer_data['img_url'] = request.data['url']
+            else :  
+            
+                serializer_data['img_upload'] = request.data['file']
 
-        serializer_data = {
-            'title': request.data['title'],
-            'description': request.data['description'],
-            'price' : float(request.data['price']), 
-            'seller': user.id,
-            'item_quantity': int(request.data['quantity']),  
-        }
-        if request.data['url'] != '' :
-            serializer_data['img_url'] = request.data['url']
-        else :  
-        
-            serializer_data['img_upload'] = request.data['file']
+            serializer = ItemSerializer(data=serializer_data)
+            print(serializer)
+            print("Is serialize valid ? ",serializer.is_valid() )
+            if serializer.is_valid():
+                serializer.save()
+                print("Valid")
+                return Response({'message': 'Item added successfully'}, status=status.HTTP_201_CREATED)
+            else:
+                print(serializer.errors)
+                return Response({'error': 'Invalid serializer data'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e :
+            print("[DEBUG ItemView - Create function] msg : ", str(e))
+            return JsonResponse({'msg': "Wrong input data"}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = ItemSerializer(data=serializer_data)
-        print(serializer)
-        print("Is serialize valid ? ",serializer.is_valid() )
-        if serializer.is_valid():
-            serializer.save()
-            print("Valid")
-            return Response({'message': 'Item added successfully'}, status=status.HTTP_201_CREATED)
-        else:
-            print(serializer.errors)
-            return Response({'error': 'Invalid serializer data'}, status=status.HTTP_400_BAD_REQUEST)
+    def update(self, request):
+        try:
+            item_id = request.data['id']
+            item = Item.objects.filter(id=item_id).first()
 
+            if not item:
+                return JsonResponse({'error': 'Item not found'}, status=status.HTTP_404_NOT_FOUND)
 
+            user = request.user
+            serializer_data = {
+                'title': request.data['title'],
+                'description': request.data['description'],
+                'price': float(request.data['price']),
+                'seller': user.id,
+                'item_quantity': int(request.data['quantity']),
+            }
 
-        
+            if request.data['url'] != '':
+                serializer_data['img_url'] = request.data['url']
+                serializer_data.pop('img_upload', None)  # Remove img_upload field if present
+            else:
+                serializer_data['img_upload'] = request.data['file']
+                serializer_data.pop('img_url', None)  # Remove img_url field if present
+
+            serializer = ItemSerializer(instance=item, data=serializer_data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+
+            return JsonResponse({'message': 'Item updated successfully'}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return JsonResponse({'msg': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            
     def remove(self, request):
         added_id = request.data["itemId"]
         user = request.user
@@ -351,41 +384,54 @@ class SessionAboutMeView(AboutMeView):
 
 #TO CHECK
 class ValidateCartView(APIView):
-    def post(self, request, *args, **kwargs):
-        user = self.request.user
+    def post(self, request):
+        user = request.user
         cart_items = CartModel.objects.filter(user=user)
-
+        items_to_save = []
         # Initialize variables to keep track of successful and failed purchases
         successful_purchases = []
-        failed_purchases = []
 
         for cart_item in cart_items:
-            item = cart_item.item
+            item = cart_item.added_item
 
             # Check if the item is still in stock
             if item.quantity >= cart_item.quantity:
-                # Create a Purchase record
-                purchase = OrderItems(
-                    user=user,
-                    item=item,
-                    quantity=cart_item.quantity
-                )
-                successful_purchases.append(purchase)
+                if item.price == cart_item.added_item_price:
+                
+                    purchase = OrderItems(
+                        user=user,
+                        item=item,
+                        quantity=cart_item.quantity
+                    )
+                    successful_purchases.append(purchase)
 
-                # Update the item's quantity (subtract the purchased quantity)
-                item.quantity -= cart_item.quantity
-                item.save()
+                    # Update the item's quantity (subtract the purchased quantity)
+                    item.quantity -= cart_item.quantity
+                    items_to_save.append(item)
+                    #item.save()
+                else :
+                    #Price has changed
+                    #Transaction halted
+                    return JsonResponse({"msg": "Price has changed", 
+                                         "Item" : item, 
+                                         "error_type" : "price"}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                # Not enough stock, adjust the quantity to the available stock
-                cart_item.quantity = item.quantity
-                failed_purchases.append(cart_item)
-
-        # Clear the user's cart
+                #Quantity insufficient
+                #Transaction halted
+                return JsonResponse({"msg": "Not enough stock, adjust the quantity to the available stock", 
+                                     "Item" : item, 
+                                     "error_type" : "quantity"}, status=status.HTTP_400_BAD_REQUEST)
+                
+        #Update Item Quatity and status
+        Item.objects.bulk_update(items_to_save, ['quantity'])
+        Item.objects.filter(id__in=[item.id for item in items_to_save]).update(is_sold=True)
+        for purchase in successful_purchases:
+            purchase.create()
+            
+        # Delete the user's cart
         cart_items.delete()
 
         success_message = "Cart validated and items purchased successfully."
-        if failed_purchases:
-            success_message += " Some items could not be purchased due to insufficient stock."
 
         return JsonResponse({"message": success_message}, status=status.HTTP_200_OK)
 

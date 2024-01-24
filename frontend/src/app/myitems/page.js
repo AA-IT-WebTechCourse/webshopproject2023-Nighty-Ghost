@@ -11,9 +11,12 @@ import UserMenuBar from "../../components/UserMenu";
 import FlashMessage from '../../components/FlashMessage'
 import ItemCard  from './../../components/ItemCard'
 import ItemModal  from './../../components/addNewItem'
+import ItemEditModal from './../../components/ediItem'
 import { IoIosAddCircleOutline } from "react-icons/io";
 // @ts-ignore
 import { BsSearch } from "react-icons/bs";
+
+  //DEAL WITH NOT AuTHENTIFICATED
 
 export default function Home() {
 
@@ -31,19 +34,29 @@ export default function Home() {
     setFlashMessage(null);
   };
 
-  const [showModal, setShowModal] = useState(false);
+  const [showModalAddItem, setShowModalAddItem] = useState(false);
 
   const openModalNewItem = () => {
-    setShowModal(true);
-    console.log(showModal)
+    setShowModalAddItem(true);
+    console.log(showModalAddItem)
   };
 
   const closeModalNewItem = () => {
-    setShowModal(false);
-    console.log(showModal)
+    setShowModalAddItem(false);
+    console.log(showModalAddItem)
   };
   
+  const [showModalEditItem, setShowModalEditItem] = useState(false);
 
+  const openModalEditItem = () => {
+    setShowModalEditItem(true);
+    console.log(showModalEditItem)
+  };
+
+  const closeModalEditItem = () => {
+    setShowModalEditItem(false);
+    console.log(showModalEditItem)
+  };
 
   const getToken = () => {
 
@@ -83,63 +96,6 @@ export default function Home() {
       console.error("Tokens or access token is undefined"); 
       return
     }
-  };
-
-  const [isHoveredOnSaleFilter, setIsHoveredOnSaleFilter] = useState(false);
-  const [isHoveredSoldFilter, setIsHoveredSoldFilter] = useState(false);
-  const [isHoveredPurchasedFilter, setIsHoveredPurchasedFilter] = useState(false);
-
-  // @ts-ignore
-  const [isOnSaleFiltered, setIsOnSaleFiltered] = useState(true);
-  // @ts-ignore
-  const [isSoldFiltered, setIsSoldFiltered] = useState(false);
-  // @ts-ignore
-  const [isPurchasedFiltered, setIsPurchasedFiltered] = useState(false);
-
-  //CATEGORY HANDLING
-  const [items, setItems] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-
-  useEffect(() => {
-    fetchItems();
-  }, [selectedCategory]);
-
-
-  //DEAL WITH NOT AuTHENTIFICATED
-  const fetchItems = async () => {
-    try {
-      let endpoint = '/api/my-items/';
-      
-      
-      if (selectedCategory === 'onSale') {
-        endpoint += '?is_sold=false';
-      } else if (selectedCategory === 'sold') {
-        endpoint += '?is_sold=true';
-      } else if (selectedCategory === 'purchased') {
-        
-      }
-
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setItems(data.items);
-      } else {
-        console.error('Failed to fetch items');
-      }
-    } catch (error) {
-      console.error('Error fetching items:', error);
-    }
-  };
-
-  const QueryItemsClick = (category) => {
-    setSelectedCategory(category);
   };
 
   const myItemsFilterstyles = {
@@ -186,6 +142,71 @@ export default function Home() {
     },
   };
 
+  const [isHoveredOnSaleFilter, setIsHoveredOnSaleFilter] = useState(false);
+  const [isHoveredSoldFilter, setIsHoveredSoldFilter] = useState(false);
+  const [isHoveredPurchasedFilter, setIsHoveredPurchasedFilter] = useState(false);
+
+  // @ts-ignore
+  const [isOnSaleFiltered, setIsOnSaleFiltered] = useState(true);
+  // @ts-ignore
+  const [isSoldFiltered, setIsSoldFiltered] = useState(false);
+  // @ts-ignore
+  const [isPurchasedFiltered, setIsPurchasedFiltered] = useState(false);
+
+    //CATEGORY HANDLING
+    const [itemToEdit, setItemToEdit] = useState([]);
+
+  //CATEGORY HANDLING
+  const [items, setItems] = useState([]);
+
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
+
+  // TO DO : FETCH ITEMS ACCORDING TO FILTER
+  useEffect(() => {
+    //fetchItems();
+  }, [selectedCategory]);
+
+
+
+  const fetchItems = async () => {
+    try {
+      let endpoint = '/api/my-items/';
+      
+      
+      if (selectedCategory === 'onSale') {
+        endpoint += '?is_sold=false';
+      } else if (selectedCategory === 'sold') {
+        endpoint += '?is_sold=true';
+      } else if (selectedCategory === 'purchased') {
+        
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setItems(data.items);
+      } else {
+        console.error('Failed to fetch items');
+      }
+    } catch (error) {
+      console.error('Error fetching items:', error);
+    }
+  };
+
+  const QueryItemsClick = (category) => {
+    setSelectedCategory(category);
+  };
+
+
+
   // @ts-ignore
   const deleteItem = async (itemId) => {
     checkAuth();
@@ -220,110 +241,14 @@ export default function Home() {
     }
   };
 
-  const addItemToCart = async (itemId) => {
-    checkAuth();
-    const tokens = getToken();
-    console.log("checkAuth: ", tokens)
-    try {
-      console.log("Inside addItemToCart asyn, isAuth : ", isAuth)
-      if(isAuth){
-        const response = await fetch("/api/update-cart/", {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${tokens.access}`,
-          },
-          body: JSON.stringify({
-            itemId: itemId,
-          }),
-        });
-        if(response.ok)
-        {
-            showFlashMessage("Item(s) ordered",'succes')
-        } else {
-          const data = await response.json()
-          console.log(data.msg)
-            showFlashMessage("Item is no longer available",'error')
-        }
-      }
-      else{
-        showFlashMessage("Only authenticated users can order item(s)",'error')
-      }
-
-    } catch (error) {
-      showFlashMessage(String(error), 'error')
-      console.error('Error occured', error);
-    }
-  };
 
   // @ts-ignore
-  const editItem = async (itemId) => {
+  const editItem = async (item) => {
+    setItemToEdit(item)
+    openModalEditItem();
     checkAuth();
     const tokens = getToken();
-    console.log("checkAuth: ", tokens)
-    try {
-      console.log("Inside addItemToCart asyn, isAuth : ", isAuth)
-      if(isAuth){
-        const response = await fetch("/api/update-cart/", {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${tokens.access}`,
-          },
-          body: JSON.stringify({
-            itemId: itemId,
-          }),
-        });
-        if(response.ok)
-        {
-            showFlashMessage("Item(s) ordered",'succes')
-        } else {
-          const data = await response.json()
-          console.log(data.msg)
-            showFlashMessage("Item is no longer available",'error')
-        }
-      }
-      else{
-        showFlashMessage("Only authenticated users can order item(s)",'error')
-      }
-
-    } catch (error) {
-      showFlashMessage(String(error), 'error')
-      console.error('Error occured', error);
-    }
-  };
-
-  // @ts-ignore
-  const addNewItem = async () => {
-    checkAuth();
-    const tokens = getToken();
-    console.log("checkAuth: ", tokens)
-    try {
-      if(isAuth){
-        const response = await fetch("/api/my_items/", {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${tokens.access}`,
-          },
-        });
-        if(response.ok)
-        {
-            showFlashMessage("Item added",'succes')
-        } else {
-          const data = await response.json()
-          console.log(data.msg)
-            showFlashMessage("Item has not been added ",'error')
-        }
-      }
-      else{
-        showFlashMessage("Only authenticated users can order item(s)",'error')
-      }
-
-    } catch (error) {
-      showFlashMessage(String(error), 'error')
-      console.error('Error occured', error);
-    }
+    console.log("item is : ", item)
   };
 
 
@@ -361,24 +286,8 @@ export default function Home() {
         fetchData();
     }, [])
 
-  // @ts-ignore
-  const cardStyle = {
-    
-    width: "202px",
-    height: "295px",
-    padding: "0px",
-    margin: "6px",
-    
-    //border: "1px solid #ccc",
-    //borderRadius: "5px",
-    //boxShadow: "0px 0px 5px #666",
-    
-    cursor: "pointer",
-    fontSize: "9px"
-    
-  };
 
-  
+  //DEAL WITH Item function if necess
   const itemsPerColumn = 6;
   const displayContentItems = [];
   for (let i = 0; i < items.length; i += itemsPerColumn) {
@@ -386,6 +295,7 @@ export default function Home() {
     // @ts-ignore
     const columnCards = columnItems.map((item, index) => (
       <ItemCard key={item.id} item={item} itemFunction={editItem} />
+      
     ));
 
     displayContentItems.push(<div style={{  
@@ -478,8 +388,8 @@ export default function Home() {
           Add Item <IoIosAddCircleOutline />
         </Button>
       </div>
-      <ItemModal show={showModal} onHide={closeModalNewItem}/>
-
+      <ItemModal show={showModalAddItem} onHide={closeModalNewItem}/>
+     {itemToEdit ? (<ItemEditModal item={itemToEdit} show={showModalEditItem} onHide={closeModalEditItem}/>) : <div></div>}
       <div
             style={{
               display: 'flex',

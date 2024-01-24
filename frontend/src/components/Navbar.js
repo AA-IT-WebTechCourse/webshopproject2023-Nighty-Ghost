@@ -18,12 +18,22 @@ import { BsPerson } from 'react-icons/bs';
 import { AiOutlineHeart } from 'react-icons/ai';
 import { BsBagCheck } from "react-icons/bs";
 import Badge from 'react-bootstrap/Badge';
+import ItemCard from './ItemCard'
 
 function NvBar() {
 
   const [isAuth, setisAuth] = useState(false);
   const TOKEN_KEY = "tokens"
   
+    
+  const [ItemCartCount, setItemCartCount] = useState(0);
+  const [SearchTerm, setSearchTerm] = useState('');
+  const [items, setItems] = useState([]);
+  const [content, setcontent] = useState([]);
+  const [cartEmpty, setCartEmpty] = useState(false);
+  const [cartItems, setCartItems] = useState([]);
+  
+
   
   const getToken = () => {
 
@@ -61,8 +71,19 @@ function NvBar() {
     }
   };
   
-  checkAuth();
-  
+  useEffect(() => {
+    // Initial check on component mount
+    checkAuth();
+
+    // Set up an interval to check every 5 minutes
+    const intervalId = setInterval(() => {
+      checkAuth();
+    }, 5 * 60 * 1000); // 5 minutes in milliseconds
+
+    // Clean up the interval on component unmount
+    return () => clearInterval(intervalId);
+  }, []); 
+
   // LOGOUT
   const logout = async () => {
     const tokens = getToken();
@@ -104,7 +125,7 @@ function NvBar() {
   };
 
   // SEARCH
-  const [SearchTerm, setSearchTerm] = useState('');
+  
   const searchItemFunction = async () => {
     try {
       console.log("Submit cliked")
@@ -135,14 +156,8 @@ function NvBar() {
       console.error('Error during search:', error);
     }
   };
-
-  const cartDivItems = [];
-
-
     // RETRIEVE ITEMS 
-    const [items, setItems] = useState([]);
-    const [content, setcontent] = useState('');
-    const [cartEmpty, setCartEmpty] = useState(false);
+
     const getCartItems = async () => {
       checkAuth();
       const tokens = getToken();
@@ -160,23 +175,17 @@ function NvBar() {
               if(response.ok)
               {
                   const data = await response.json();
-                  console.log("[RETURNED DATA QUERY CART: ", data.items, )
-                  setItems(data.items)
-                  console.log(items,data.items.length)
+                  setCartItems(data.items)
+                  setItemCartCount(data.items.length)
                   if(items.length > 0)
                   {
-                    console.log("Items are > 0")
-
+                      console.log(items)
                       const cartDivItems = data.items.map((item, index) => (
-                        <div key={index} style={{  
-                          display: 'flex',
-                          flexDirection: 'row',
-                          marginBottom: "20px",
-                          background: "yellow"
-                        }}> Element {index}</div>
+                        <ItemCard key={item.added_item.id} item={item.added_item} itemFunction={deleteItem} />
                       ));
+                      
                     setcontent(cartDivItems);
-                    console.log("cartDiv content :\n",cartDivItems)
+                    
                     setCartEmpty(false)
                   }
               else{
@@ -196,6 +205,7 @@ function NvBar() {
         console.error('Error occured', error);
       }
     };
+
   // SHOW AND HIDE CART
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   useEffect(() => {
@@ -211,9 +221,13 @@ function NvBar() {
     setIsPanelOpen(false);
   };
   const panelStyle = {
-    width: isPanelOpen ? '400px' : '0', 
-    height: '100vh',
-    marginTop: "80px",
+    display: isPanelOpen ? 'block' : 'none',
+    width: '450px', 
+    height: '100%',
+    marginRight: "10px",
+    boxShadow: ' 2px 2px 13px 13px #D3D3D3',
+    borderRadius: '1rem',
+    marginBottom: "10px",
     backgroundColor: '#fff', 
     overflowX: 'hidden',
     position: 'fixed',
@@ -280,7 +294,7 @@ function NvBar() {
             <div style={{ position: 'relative', display: 'inline-block' }}>
       <BsBagCheck size={18} id="cart" onClick={showCart} />
       <Badge bg="warning" style={{ position: 'absolute', bottom: -7, left: 7, fontSize:"8px", background:"yellow", color:"black" }}>
-        9
+        {ItemCartCount}
       </Badge>
     </div>
             </div> 
@@ -323,7 +337,7 @@ function NvBar() {
                           flexDirection:'row',
                           alignItems:'center',
                           justifyContent:'center', fontSize:"14px"}}>
-              Cart
+              <h1> <b>BAG</b> </h1>
 
               
           </div>
@@ -333,8 +347,10 @@ function NvBar() {
                           justifyContent:'center', fontSize:"14px"}}>
                 
                 <div id="cartItems">
-                  {content}
-                </div>
+                      {cartItems.map((item, index) => (
+                        <ItemCard key={item.added_item.id} item={item.added_item} itemFunction={deleteItem} />
+                      ))}
+                    </div>
               </div>      
 
 
