@@ -57,7 +57,6 @@ const ItemEditModal =  ({ show, onHide, item })=> {
     url: '',
     description: '',
     price: '',
-    quantity: '',
   });
 
   useEffect(() => {
@@ -68,7 +67,7 @@ const ItemEditModal =  ({ show, onHide, item })=> {
       url: item.img_url || '',
       description: item.description || '',
       price: item.price || '',
-      quantity: item.item_quantity || '',
+
     });
   }, [item]);
 
@@ -92,7 +91,6 @@ const ItemEditModal =  ({ show, onHide, item })=> {
     formDataToSend.append('description', formData.description);
     formDataToSend.append('price', formData.price);
     formDataToSend.append('url', formData.url);
-    formDataToSend.append('quantity', formData.quantity);
   
     if (!isChecked) {
       formDataToSend.append('file', file[0]);
@@ -124,7 +122,6 @@ const ItemEditModal =  ({ show, onHide, item })=> {
             url: item.url,
             description: item.description,
             price: item.price,
-            quantity: item.quantity,
           });
 
           setFile(null);
@@ -141,7 +138,6 @@ const ItemEditModal =  ({ show, onHide, item })=> {
         url: item.url,
         description: item.description,
         price: item.price,
-        quantity: item.quantity,
       });
 
       setFile(null);
@@ -246,16 +242,7 @@ const ItemEditModal =  ({ show, onHide, item })=> {
 
 
 
-            <Form.Group controlId="Edit_formQuantity" style={{ margin: '10px' }}>
-              <Form.Label>Quantity</Form.Label>
-              <Form.Control
-                type="number"
-                placeholder="Enter quantity"
-                name="quantity"
-                value={formData.quantity}
-                onChange={updateValueForm}
-              />
-            </Form.Group>
+
 
             <Form.Group controlId="Edit_formPrice" style={{margin:"10px"}}>
               <Form.Label>Price (€)</Form.Label>

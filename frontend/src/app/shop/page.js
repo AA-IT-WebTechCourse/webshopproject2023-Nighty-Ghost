@@ -193,14 +193,16 @@ export default function Home() {
             itemId: item.id,
             price: item.price
           }),
+          
         });
+        const data = await response.json()
+        console.log(data.msg);
+        const msg = data.msg;
         if(response.ok)
         {
-            showFlashMessage("Item ordered",'succes')
+            showFlashMessage(msg,'succes')
         } else {
-          const data = await response.json()
-          console.log(data.msg)
-          const msg = data.msg;
+
             showFlashMessage(msg,'error')
         }
       }
@@ -221,8 +223,9 @@ export default function Home() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch('api/get_items/');
+                const response = await fetch('/api/get_items/');
                 const data = await response.json();
+                console.log(response)
                 console.log(typeof data.items); 
                 console.log(Object.keys(data.items).length);
                 setItems(data.items);

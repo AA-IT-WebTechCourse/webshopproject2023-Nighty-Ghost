@@ -14,9 +14,6 @@ import ItemModal  from './../../components/addNewItem'
 import ItemEditModal from './../../components/ediItem'
 import { IoIosAddCircleOutline } from "react-icons/io";
 // @ts-ignore
-import { BsSearch } from "react-icons/bs";
-
-  //DEAL WITH NOT AuTHENTIFICATED
 
 export default function Home() {
 
@@ -207,39 +204,6 @@ export default function Home() {
 
 
 
-  // @ts-ignore
-  const deleteItem = async (itemId) => {
-    checkAuth();
-    const tokens = getToken()
-    try {
-      
-      if(isAuth){
-        const response = await fetch("/api/update-cart/", {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${tokens.access}`,
-          },
-          body: JSON.stringify({
-            itemId: itemId,
-          }),
-        });
-        if(response.ok)
-        {
-            showFlashMessage("Item deleted from cart",'succes')
-        } else {
-            showFlashMessage("Erro occured",'error')
-        }
-      }
-      else{
-        showFlashMessage("Only authenticated users can order item(s)",'error')
-      }
-  
-    } catch (error) {
-      showFlashMessage(String(error), 'error')
-      console.error('Error occured', error);
-    }
-  };
 
 
   // @ts-ignore

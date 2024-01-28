@@ -1,5 +1,6 @@
 import React from 'react';
 import { BiCartAdd } from 'react-icons/bi';
+import { BsBagPlus } from "react-icons/bs";
 import { LiaEditSolid } from 'react-icons/lia';
 import { RiDeleteBin2Line } from 'react-icons/ri';
 import { useEffect, useState } from 'react';
@@ -14,13 +15,16 @@ const ItemCard = ({ item, itemFunction }) => {
 
   switch (functionName) {
     case 'addItemToCart':
-      iconComponent = <BiCartAdd size={18} key={item.id} onClick={() => itemFunction(item)} />;
+      iconComponent = <BsBagPlus size={18} key={item.id} onClick={() => itemFunction(item)} />;
       break;
     case 'editItem':
       iconComponent = <LiaEditSolid size={18} key={item.id} onClick={() => itemFunction(item)} />;
       break;
+      case 'deleteItem':
+        iconComponent = <RiDeleteBin2Line size={18} key={item.id} onClick={() => itemFunction(item)} />;
+        break;
     default:
-      iconComponent = <BiCartAdd size={18} key={item.id} onClick={() => itemFunction(item)} />;
+      iconComponent = <BsBagPlus size={18} key={item.id} onClick={() => itemFunction(item)} />;
   }
 
   const cardStyle = {

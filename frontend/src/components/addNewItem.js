@@ -58,7 +58,6 @@ const ItemModal =  ({ show, onHide })=> {
     url: '',
     description: '',
     price: '',
-    quantity: '1',
   });
 
   
@@ -81,7 +80,6 @@ const ItemModal =  ({ show, onHide })=> {
     formDataToSend.append('description', formData.description);
     formDataToSend.append('price', formData.price);
     formDataToSend.append('url', formData.url);
-    formDataToSend.append('quantity', formData.quantity);
   
     if (isChecked) {
       formDataToSend.append('pictureUrl', formData.title);
@@ -118,7 +116,6 @@ const ItemModal =  ({ show, onHide })=> {
             url: '',
             description: '',
             price: '',
-            quantity: '1',
           });
 
           setFile(null);
@@ -135,7 +132,6 @@ const ItemModal =  ({ show, onHide })=> {
         url: '',
         description: '',
         price: '',
-        quantity: '1',
       });
 
       setFile(null);
@@ -240,16 +236,6 @@ const ItemModal =  ({ show, onHide })=> {
 
 
 
-            <Form.Group controlId="formQuantity" style={{ margin: '10px' }}>
-              <Form.Label>Quantity</Form.Label>
-              <Form.Control
-                type="number"
-                placeholder="Enter quantity"
-                name="quantity"
-                value={formData.quantity}
-                onChange={updateValueForm}
-              />
-            </Form.Group>
 
             <Form.Group controlId="formPrice" style={{margin:"10px"}}>
               <Form.Label>Price (€)</Form.Label>

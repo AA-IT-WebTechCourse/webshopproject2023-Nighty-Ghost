@@ -21,6 +21,7 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from django.core.files.storage import default_storage
 from urllib.parse import unquote
+from django.core.serializers import serialize
 import random
 import base64
 
@@ -95,18 +96,15 @@ class CartView(viewsets.ModelViewSet):
         for cart_data, item_data in zip(cart_serializer.data, item_serializer.data):
             concatenated_data.append({**cart_data, 'added_item': item_data})
         
-        for elem in concatenated_data:
-            print(elem)
+        # for elem in concatenated_data:
+        #     print(elem)
         #print(concatenated_data)
 
         return JsonResponse({'items': concatenated_data}, status = 200)
 
 
     def create(self, request):
-        if not request.user.is_authenticated:
-            return JsonResponse({'msg': 'Only authenticated users'}, status=status.HTTP_401_UNAUTHORIZED)
-        
-       
+  
         added_id = request.data["itemId"]
         price_added = request.data["price"]
 
@@ -115,10 +113,10 @@ class CartView(viewsets.ModelViewSet):
         print('Item ID : ', added_id )
         print("Price added")
         
+        #TO REMOVE ADDED ITEM PRICE
         serializer_data = {
             'added_by': user.id,
             'added_item': added_id,  
-            'added_item_price': price_added
         }
         serializer = self.serializer_class(data= serializer_data)
 
@@ -139,15 +137,21 @@ class CartView(viewsets.ModelViewSet):
             # print("[BUYER]", user.username, type(user.username))
             # print("[SELLER] ", item.seller.id, type(item.seller.id))
             # print("[SELLER] ", item.seller.username, type(item.seller.username))
-            if item.seller.id != user.id:
-                print("ADDED")
-                CartModel.objects.create(added_by = user,
-                                    added_item = item,
-                                    added_item_price = price_added )
-                return JsonResponse({'msg': "Item added to cart successfully"}, status = 200)
-            else:
+
+
+            if item.is_sold == False :
+                # TO DO : REMOVE ADDED ITEM PRICE
+                if item.seller.id != user.id:
+                    print("ADDED")
+                    CartModel.objects.create(added_by = user,
+                                        added_item = item,)
+                    return JsonResponse({'msg': "Item added to cart successfully"}, status = 200)
+                else:
+                    print("Not ADDED")
+                    return JsonResponse({'msg': " Add failed : this item belongs to you"}, status = 400)
+            else :
                 print("Not ADDED")
-                return JsonResponse({'msg': " Add failed : The item belongs to you"}, status = 400)
+                return JsonResponse({'msg': " Add failed : Item no longer available"}, status = 400)
             
         
         except Exception as e:
@@ -185,8 +189,10 @@ class ItemViewPublic(viewsets.ModelViewSet):
     serializer_class = ItemSerializer
 
     def get_items(self, request):
+        print("HERE")
         try:
-            items = Item.objects.all().values()  
+            items = Item.objects.filter(is_sold=False).values()
+             
             return JsonResponse({'items': list(items)})
         except Exception as e:
             print(f"Error in get_items: {e}")
@@ -222,10 +228,8 @@ class ItemView(viewsets.ModelViewSet):
         elif obj.get('img_upload'):
             #obj['img_upload'] looks like : /item_images/Capture_décran_tab_option.png
             print("spliT : ", obj['img_upload'].split('/')) 
-
-            print("MEDIA FOLDER : ", settings.MEDIA_ROOT)
+            
             _, folder, img_name = obj['img_upload'].split('/')
-            #img_path = os.path.join(settings.MEDIA_ROOT, folder, img_name)
             img_path = os.path.join(settings.BASE_DIR, folder, unquote(img_name))
             with open(img_path, 'rb') as image_file:
                 encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
@@ -241,13 +245,14 @@ class ItemView(viewsets.ModelViewSet):
     def list(self, request):
         user = request.user
         try:
-            my_items = Item.objects.filter(seller=user)
-            my_sold_items = my_items.filter(is_sold=True)
-            my_not_sold_items = my_items.filter(is_sold=False)
             
-            serialized_sold_items = self.serializer_class(my_sold_items, many=True).data
+            sold_item =  Item.objects.filter(seller=user, is_sold=True)
+            avalaible_items = Item.objects.filter(seller=user, is_sold=False)
+
             
-            serialized_not_sold_items = self.serializer_class(my_not_sold_items, many=True).data
+            serialized_sold_items = self.serializer_class(sold_item, many=True).data
+            
+            serialized_not_sold_items = self.serializer_class(avalaible_items, many=True).data
             
             for item in serialized_sold_items:
                 item['image'] = self.get_image_data(item)
@@ -281,14 +286,12 @@ class ItemView(viewsets.ModelViewSet):
             print("description : ", request.data['description'])
             print("price : ", request.data['price'])
             print("file : ", request.data['file'], type(request.data['file']))
-            print("Quantity : ", request.data['quantity'], type(request.data['quantity']))
 
             serializer_data = {
                 'title': request.data['title'],
                 'description': request.data['description'],
                 'price' : float(request.data['price']), 
                 'seller': user.id,
-                'item_quantity': int(request.data['quantity']),  
             }
             if request.data['url'] != '' :
                 serializer_data['img_url'] = request.data['url']
@@ -316,8 +319,8 @@ class ItemView(viewsets.ModelViewSet):
             item_id = request.data['id']
             item = Item.objects.filter(id=item_id).first()
 
-            if not item:
-                return JsonResponse({'error': 'Item not found'}, status=status.HTTP_404_NOT_FOUND)
+            if item.is_sold:
+                return JsonResponse({'error': 'Item have been sold'}, status=status.HTTP_400_BAD_REQUEST)
 
             user = request.user
             serializer_data = {
@@ -325,7 +328,6 @@ class ItemView(viewsets.ModelViewSet):
                 'description': request.data['description'],
                 'price': float(request.data['price']),
                 'seller': user.id,
-                'item_quantity': int(request.data['quantity']),
             }
 
             if request.data['url'] != '':
@@ -383,53 +385,75 @@ class SessionAboutMeView(AboutMeView):
     authentication_classes = [authentication.SessionAuthentication]
 
 #TO CHECK
-class ValidateCartView(APIView):
-    def post(self, request):
+class ValidateCartView(viewsets.ModelViewSet):
+    authentication_classes = [authentication.SessionAuthentication, JWTAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def pay_items(self, request):
+        print('------------------------ [REQUEST ON VALIDATECARTVIEW] ---------------------------')
         user = request.user
-        cart_items = CartModel.objects.filter(user=user)
+        
+        print("[USER IS] ", user)
+        cart_items = CartModel.objects.filter(added_by = user)
         items_to_save = []
         # Initialize variables to keep track of successful and failed purchases
         successful_purchases = []
+        items_to_purchase = request.data['items']
+        print("\n\n[REQUEST IS] : ", request.data['items'], type(items_to_purchase), type(items_to_purchase[0]))
+        
 
-        for cart_item in cart_items:
-            item = cart_item.added_item
+        for product in items_to_purchase:
+            # {'id': 1, 
+            #   'added_time': '2024-01-24T09:40:35.957828Z', 
+            #   'added_by': 2, 
+            #     'added_item': {'id': 1, 'title': 'Nike Swoosh', 'description': '...', 'price': '22.95', 
+            #                    'date_added': '2024-01-20T17:52:31.051651Z', 
+            #                    'is_sold': False, 
+            #                    'img_upload': None, 
+            #                    'img_url': '...', 
+            #                    'seller': 2}
+            product_id = int(product['added_item']['id'])
+            #Price when request has been sent
+            product_price = float(product['added_item']['price'])
 
-            # Check if the item is still in stock
-            if item.quantity >= cart_item.quantity:
-                if item.price == cart_item.added_item_price:
-                
-                    purchase = OrderItems(
-                        user=user,
-                        item=item,
-                        quantity=cart_item.quantity
-                    )
-                    successful_purchases.append(purchase)
-
-                    # Update the item's quantity (subtract the purchased quantity)
-                    item.quantity -= cart_item.quantity
-                    items_to_save.append(item)
-                    #item.save()
-                else :
-                    #Price has changed
-                    #Transaction halted
-                    return JsonResponse({"msg": "Price has changed", 
-                                         "Item" : item, 
-                                         "error_type" : "price"}, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                #Quantity insufficient
-                #Transaction halted
-                return JsonResponse({"msg": "Not enough stock, adjust the quantity to the available stock", 
-                                     "Item" : item, 
-                                     "error_type" : "quantity"}, status=status.HTTP_400_BAD_REQUEST)
-                
-        #Update Item Quatity and status
-        Item.objects.bulk_update(items_to_save, ['quantity'])
-        Item.objects.filter(id__in=[item.id for item in items_to_save]).update(is_sold=True)
-        for purchase in successful_purchases:
-            purchase.create()
+            corresponding_item = Item.objects.filter(id = product_id).first()
+            corresponding_cart_item = CartModel.objects.filter(added_by = user, added_item__id=product_id)
             
+            print("'\n\n'[CORREPONDING ITEM]", corresponding_cart_item[0].added_by ,corresponding_cart_item[0].id )
+
+            if corresponding_item.is_sold == True : 
+                return JsonResponse({"msg": "Item no longer available", 
+                                        "Item" : serialized_item, 
+                                        "error_type" : "sold"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if float(corresponding_item.price) == float(product_price):
+            
+                purchase = OrderItems(
+                    user=user,
+                    item=corresponding_item,
+                    quantity = 1
+                )
+                successful_purchases.append(purchase)
+
+                
+                items_to_save.append(corresponding_item)
+                #item.save()
+            else :
+                #Price has changed
+                #Transaction halted
+                print()
+                serialized_item = serialize('json', [corresponding_item])
+                return JsonResponse({"msg": "Price has changed", 
+                                        "Item" : serialized_item, 
+                                        "error_type" : "price"}, status=status.HTTP_400_BAD_REQUEST)
+
+        for purchase in successful_purchases:
+            purchase.save()
+
+        Item.objects.filter(id__in=[item.id for item in items_to_save]).update(is_sold=True)
         # Delete the user's cart
-        cart_items.delete()
+        user_cart = CartModel.objects.filter(added_by = user)
+        user_cart.delete()
 
         success_message = "Cart validated and items purchased successfully."
 
@@ -472,10 +496,8 @@ def populate_db(request):
                         title = item["productName"] #f'Item{j} by {username}'
                         description =  item["description"] #f'Description for Item{j} by {username}'
                         price = float(item["listPrice"])
-                        category = item["category"]
                         img_url = item["imageUrl"]
-                        Item.objects.create(title=title, description=description, price=price, img_url=img_url, seller=user, item_quantity = random.randint(1,5))
-                        #Item.objects.create(title=title, description=description, category=category,price=price, img_url=img_url, seller=user, auto_add = True)
+                        Item.objects.create(title=title, description=description, price=price, img_url=img_url, seller=user)
                     
 
             return JsonResponse({'message': 'User created successfully'})

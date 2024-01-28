@@ -6,9 +6,8 @@ class Item(models.Model):
     description = models.TextField(blank=False, null=False)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     date_added = models.DateTimeField(auto_now_add=True)
-    is_sold = models.BooleanField(default=False)
+    is_sold = models.BooleanField(default=False) 
     seller = models.ForeignKey(User, on_delete=models.CASCADE)
-    item_quantity = models.PositiveIntegerField(default=1)
     img_upload = models.FileField(upload_to='item_images', blank=True, null=True)
     img_url = models.TextField(blank=True, null=True)
 
@@ -16,8 +15,6 @@ class Item(models.Model):
 class CartModel(models.Model):
     added_by = models.ForeignKey(User, on_delete=models.CASCADE,null=False)
     added_item = models.ForeignKey(Item, on_delete=models.CASCADE,null=False)
-    added_item_price = models.CharField(max_length=100,blank=False, null=False)
-    #date_added
     added_time = models.DateTimeField(auto_now_add=True)
 
 class OrderItems(models.Model):

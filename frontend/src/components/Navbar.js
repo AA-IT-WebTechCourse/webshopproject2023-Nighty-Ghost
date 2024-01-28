@@ -1,5 +1,5 @@
 // @ts-ignore
-import Button from 'react-bootstrap/Button';
+
 import Container from 'react-bootstrap/Container';
 import { Link } from 'react-router-dom';
 import Form from 'react-bootstrap/Form';
@@ -19,6 +19,7 @@ import { AiOutlineHeart } from 'react-icons/ai';
 import { BsBagCheck } from "react-icons/bs";
 import Badge from 'react-bootstrap/Badge';
 import ItemCard from './ItemCard'
+import ContainerCart from './cartItem'
 
 function NvBar() {
 
@@ -28,11 +29,11 @@ function NvBar() {
     
   const [ItemCartCount, setItemCartCount] = useState(0);
   const [SearchTerm, setSearchTerm] = useState('');
-  const [items, setItems] = useState([]);
+
   const [content, setcontent] = useState([]);
   const [cartEmpty, setCartEmpty] = useState(false);
   const [cartItems, setCartItems] = useState([]);
-  
+      // @ts-ignore
 
   
   const getToken = () => {
@@ -72,17 +73,17 @@ function NvBar() {
   };
   
   useEffect(() => {
-    // Initial check on component mount
     checkAuth();
-
     // Set up an interval to check every 5 minutes
     const intervalId = setInterval(() => {
       checkAuth();
     }, 5 * 60 * 1000); // 5 minutes in milliseconds
 
-    // Clean up the interval on component unmount
+
     return () => clearInterval(intervalId);
   }, []); 
+
+  
 
   // LOGOUT
   const logout = async () => {
@@ -158,42 +159,40 @@ function NvBar() {
   };
     // RETRIEVE ITEMS 
 
-    const getCartItems = async () => {
+
+    const payItems = async () => {
+      getCartItems();
       checkAuth();
       const tokens = getToken();
       try {
         
         if(isAuth){
-              const response = await fetch("/api/update-cart/", {
-                method: 'GET',
+              const response = await fetch("/api/validate-cart/", {
+                method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
                   'Authorization': `Bearer ${tokens.access}`,
                 },
+                body: JSON.stringify({
+                  items: cartItems,
+                }),
               
               });
+              const data = await response.json();
+              const msg = data.msg;
               if(response.ok)
               {
-                  const data = await response.json();
-                  setCartItems(data.items)
-                  setItemCartCount(data.items.length)
-                  if(items.length > 0)
-                  {
-                      console.log(items)
-                      const cartDivItems = data.items.map((item, index) => (
-                        <ItemCard key={item.added_item.id} item={item.added_item} itemFunction={deleteItem} />
-                      ));
-                      
-                    setcontent(cartDivItems);
-                    
-                    setCartEmpty(false)
-                  }
-              else{
-                setCartEmpty(true)
-              }
+                  showFlashMessage(msg, 'success')
+                  setCartItems(null)
+                  setCartEmpty(true)
+                  setItemCartCount(0)
+                  
               //showFlashMessage(" Cart Items from cart",'succes')
           } else {
-              showFlashMessage("Erro occured while trying to get the cart",'error')
+              
+              showFlashMessage("Error occured while trying to validate the cart : ",'error')
+              showFlashMessage(msg, 'success')
+              showFlashMessage(msg, 'error')
           }
         }
         else{
@@ -208,25 +207,23 @@ function NvBar() {
 
   // SHOW AND HIDE CART
   const [isPanelOpen, setIsPanelOpen] = useState(false);
-  useEffect(() => {
-    getCartItems();
-  }, []);
+
 
   const showCart = () => {
     setIsPanelOpen(!isPanelOpen);
-    getCartItems()
   };
 
   const hideCart = () => {
     setIsPanelOpen(false);
   };
+
   const panelStyle = {
-    display: isPanelOpen ? 'block' : 'none',
-    width: '450px', 
+    
+    width: isPanelOpen ? '600px' : '0px', 
     height: '100%',
     marginRight: "10px",
-    boxShadow: ' 2px 2px 13px 13px #D3D3D3',
-    borderRadius: '1rem',
+    boxShadow: isPanelOpen ? '2px 2px 13px 13px #D3D3D3' : '0px 0px 0px 0px #FFFFFF',
+    borderRadius: isPanelOpen ? '0.5rem' : '0rem',
     marginBottom: "10px",
     backgroundColor: '#fff', 
     overflowX: 'hidden',
@@ -236,6 +233,18 @@ function NvBar() {
     transition: '0.5s', 
     zIndex: 1,
   };
+
+  const overlayStyle = {
+    display: isPanelOpen ? 'block' : 'none',
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+    zIndex: 2, 
+  };
+
   const closeBtnStyle = {
     position: 'absolute',
     top: '10px',
@@ -245,7 +254,7 @@ function NvBar() {
   
 
   // DELETE ITEM FROM CART
-  const deleteItem = async (itemId) => {
+  const updateInfoItem = async (itemId) => {
     checkAuth();
     const tokens = getToken();
     try {
@@ -291,7 +300,7 @@ function NvBar() {
             
             <div style={{ display: 'flex', alignItems: 'center', marginRight:"15px", cursor:"pointer",  }}> 
   
-            <div style={{ position: 'relative', display: 'inline-block' }}>
+            <div style={{ position: 'relative' }}>
       <BsBagCheck size={18} id="cart" onClick={showCart} />
       <Badge bg="warning" style={{ position: 'absolute', bottom: -7, left: 7, fontSize:"8px", background:"yellow", color:"black" }}>
         {ItemCartCount}
@@ -324,6 +333,9 @@ function NvBar() {
       </Container>
       <div 
 // @ts-ignore
+      style={overlayStyle} onClick={hideCart}></div>
+      <div 
+// @ts-ignore
       style={panelStyle}>
         <AiOutlineClose 
 // @ts-ignore
@@ -336,23 +348,13 @@ function NvBar() {
           <div style = {{ display:'flex', 
                           flexDirection:'row',
                           alignItems:'center',
+                          marginTop:"20px",
                           justifyContent:'center', fontSize:"14px"}}>
               <h1> <b>BAG</b> </h1>
 
               
           </div>
-          <div style = {{ display:'flex', 
-                          flexDirection:'row',
-                          alignItems:'center',
-                          justifyContent:'center', fontSize:"14px"}}>
-                
-                <div id="cartItems">
-                      {cartItems.map((item, index) => (
-                        <ItemCard key={item.added_item.id} item={item.added_item} itemFunction={deleteItem} />
-                      ))}
-                    </div>
-              </div>      
-
+          <ContainerCart setItemCartCount={setItemCartCount} />
 
         </div>
       </div>

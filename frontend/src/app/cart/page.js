@@ -80,6 +80,8 @@ export default function Home() {
     }
   };
 
+  
+
   const RemoveItemDiv = (ItemDivId) => {
     const divToRemove = document.getElementById(ItemDivId);
 
