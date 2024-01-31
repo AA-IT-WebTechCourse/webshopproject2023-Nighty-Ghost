@@ -4,7 +4,7 @@ import { Modal } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.css';
 // @ts-ignore
 import { Button, Container, Form, Nav, Card, Row, Col, } from 'react-bootstrap';
-
+import ItemContainer from './../../components/ItemsContainer.js'; 
 import { useEffect, useState } from "react";
 import NvBar from '../../components/Navbar'
 import UserMenuBar from "../../components/UserMenu";
@@ -26,6 +26,9 @@ export default function Home() {
   const showFlashMessage = (message, type) => {
     setFlashMessage({ message, type });
   };
+  const [onSaleFilter, setOnSaleFilter] = useState(true);
+  const [soldFilter, setSoldFilter] = useState(false);
+  const [purchasedFilter, setPurchasedFilter] = useState(false);
 
   const closeFlashMessage = () => {
     setFlashMessage(null);
@@ -95,76 +98,16 @@ export default function Home() {
     }
   };
 
-  const myItemsFilterstyles = {
-    myItemsFilterMenuCtn: {
-      width: '60%',
-      display: 'flex',
-      alignContent: 'stretch',
-      marginTop:"40px",
-    },
-    myItemsFilterMenu: {
-      display: 'inline-block',
-      padding: '10px 5px',
-      flex: 1,
-      color: 'whitesmoke',
-      textDecoration: 'none',
-      justifyContent: "center",
-      textAlign: 'center',
-      fontWeight: 600,
-      lineHeight: '30px',
-      verticalAlign: 'middle',
-      transition: 'transform 0.3s ease-in-out',
-    },
-    myItemsFilterMenuLink: {
-      color: 'whitesmoke',
-    },
-    myItemsFilterMenu0: {
-      backgroundColor: 'darkblue',
-      color: 'white',
-      borderRadius: '5px 0px 0px 5px',
-      cursor: 'pointer',
-    },
-    myItemsFilterMenu1: {
-      backgroundColor: '#C0E410',
-      cursor: 'pointer',
-    },
-    myItemsFilterMenu2: {
-      backgroundColor: '#4F9E30',
-      borderRadius: '0px 5px 5px 0px',
-      cursor: 'pointer',
-    },
-    myItemsFilterMenuHover: {
-      transform: 'scale(1.1)',
-      zIndex: 9999,
-    },
-  };
 
   const [isHoveredOnSaleFilter, setIsHoveredOnSaleFilter] = useState(false);
   const [isHoveredSoldFilter, setIsHoveredSoldFilter] = useState(false);
   const [isHoveredPurchasedFilter, setIsHoveredPurchasedFilter] = useState(false);
 
-  // @ts-ignore
-  const [isOnSaleFiltered, setIsOnSaleFiltered] = useState(true);
-  // @ts-ignore
-  const [isSoldFiltered, setIsSoldFiltered] = useState(false);
-  // @ts-ignore
-  const [isPurchasedFiltered, setIsPurchasedFiltered] = useState(false);
 
-    //CATEGORY HANDLING
-    const [itemToEdit, setItemToEdit] = useState([]);
+  const [itemToEdit, setItemToEdit] = useState([]);
 
-  //CATEGORY HANDLING
+ 
   const [items, setItems] = useState([]);
-
-  const [selectedCategory, setSelectedCategory] = useState(null);
-
-
-  // TO DO : FETCH ITEMS ACCORDING TO FILTER
-  useEffect(() => {
-    //fetchItems();
-  }, [selectedCategory]);
-
-
 
   const fetchItems = async () => {
     try {
@@ -198,9 +141,21 @@ export default function Home() {
     }
   };
 
-  const QueryItemsClick = (category) => {
-    setSelectedCategory(category);
+  const FilterItems = (category) => {
+    if (category === 'onSale') {
+      setOnSaleFilter(true);
+      setSoldFilter(false);
+      setPurchasedFilter(false);
+    } else if (category === 'Sold') {
+      setOnSaleFilter(false);
+      setSoldFilter(true);
+      setPurchasedFilter(false);
+    } else if (category === 'Purchased') {
+      setOnSaleFilter(false);
+      setSoldFilter(false);
+      setPurchasedFilter(true);
   };
+}
 
 
 
@@ -215,18 +170,60 @@ export default function Home() {
     console.log("item is : ", item)
   };
 
+  const myItemsFilterstyles = {
+    myItemsFilterMenuCtn: {
+      width: '60%',
+      display: 'flex',
+      alignContent: 'stretch',
+      marginTop:"40px",
+    },
+    myItemsFilterMenu: {
+      display: 'inline-block',
+      padding: '10px 5px',
+      flex: 1,
+      color: 'whitesmoke',
+      textDecoration: 'none',
+      justifyContent: "center",
+      textAlign: 'center',
+      fontWeight: 600,
+      lineHeight: '30px',
+      verticalAlign: 'middle',
+      transition: 'transform 0.3s ease-in-out',
+    },
+    myItemsFilterMenuLink: {
+      color: 'whitesmoke',
+    },
+    myItemsFilterMenu0: {
+      backgroundColor: 'darkblue',
+      color: 'white',
+      borderRadius: '5px 0px 0px 5px',
+      cursor: 'pointer',
+      transform: onSaleFilter? 'scale(1.2)' : '' 
+    },
+    myItemsFilterMenu1: {
+      backgroundColor: '#C0E410',
+      cursor: 'pointer',
+      transform: soldFilter ? 'scale(1.2)' : '' 
+    },
+    myItemsFilterMenu2: {
+      backgroundColor: '#4F9E30',
+      borderRadius: '0px 5px 5px 0px',
+      cursor: 'pointer',
+      transform: purchasedFilter ? 'scale(1.2)' : '' 
+    },
+    myItemsFilterMenuHover: {
+      transform: 'scale(1.4)',
+      zIndex: 9999,
+    },
+  };
 
   // @ts-ignore
-  const [itemsOnSale, setItemsOnSale] = useState([]);
-  // @ts-ignore
-  const [itemsSold, setItemsSold] = useState([]);
 
     useEffect(() => {
         checkAuth();
         const tokens = getToken();
   
         const fetchData = async () => {
-  
           try {
               const response = await fetch("/api/my_items/", {
                   method: 'GET',
@@ -242,38 +239,67 @@ export default function Home() {
               console.log(Object.keys(data.items).length);
               setItems(data.items.not_sold);
               console.log(data.items.not_sold)
+              if (soldFilter) {
+                setItems(data.items.sold);
+              } else if (onSaleFilter) {
+                setItems(data.items.onsale);
+              } else if (purchasedFilter) {
+                setItems(data.items.purchased);
+              } else {
+                // Handle the case where none of the filters is true
+                console.error("No valid filter is true.");
+              }
           } catch (error) {
               console.error('Error fetching items:', error);
           }
         };
 
         fetchData();
-    }, [])
+    }, [onSaleFilter,soldFilter,purchasedFilter]) //
 
+    const deleteItem = async (itemId) => {
 
-  //DEAL WITH Item function if necess
-  const itemsPerColumn = 6;
-  const displayContentItems = [];
-  for (let i = 0; i < items.length; i += itemsPerColumn) {
-    const columnItems = items.slice(i, i + itemsPerColumn);
-    // @ts-ignore
-    const columnCards = columnItems.map((item, index) => (
-      <ItemCard key={item.id} item={item} itemFunction={editItem} />
-      
-    ));
+      try {
+        checkAuth();
+        const tokens = getToken();
+        console.log("Sent form data:");
+        console.log(formData)
+    
+        const response = await fetch('/api/my_items/', {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${tokens.access}`,
+          },
+          body: {'itemID': itemId},
+        });
+    
+        const data = await response.json();
+        console.log("Response for loggin is : ", response);
+        console.log("Data sent back is : ", data);
+    
+        if (response.ok) {
+          //showFlashMessage('Item added successfully!', 'success');
+  
+            setFile(null);
+        }
+        else{
+  
+        }
+    
+      } catch (error) {
+        console.error('Error during new item creation:', error);
+        setFormData({
+          
+          title: item.title,
+          url: item.url,
+          description: item.description,
+          price: item.price,
+        });
+  
+        setFile(null);
+      }
+    };
 
-    displayContentItems.push(<div style={{  
-                              display: 'flex',
-                              flexDirection: 'row',
-                              marginBottom:"20px",  
-                              
-                            }} 
-                            key={i} >
-
-      {columnCards}
-      
-      </div>);
-  }
 
 
   return (
@@ -305,10 +331,11 @@ export default function Home() {
                     ...myItemsFilterstyles.myItemsFilterMenu,
                     ...myItemsFilterstyles.myItemsFilterMenu0,
                     ...(isHoveredOnSaleFilter && myItemsFilterstyles.myItemsFilterMenuHover),
+                    
                   }}
                   onMouseEnter={() => setIsHoveredOnSaleFilter(true)}
                   onMouseLeave={() => setIsHoveredOnSaleFilter(false)}
-                  onClick={() => QueryItemsClick('onSale')}
+                  onClick={() => FilterItems('onSale')}
                 >
                   On sale
                 </div>
@@ -321,7 +348,7 @@ export default function Home() {
                   }}
                   onMouseEnter={() => setIsHoveredSoldFilter(true)}
                   onMouseLeave={() => setIsHoveredSoldFilter(false)}
-                  onClick={() => QueryItemsClick('Sold')}
+                  onClick={() => FilterItems('Sold')}
                 >
                   Sold
                 </div>
@@ -334,14 +361,14 @@ export default function Home() {
                   }}
                   onMouseEnter={() => setIsHoveredPurchasedFilter(true)}
                   onMouseLeave={() => setIsHoveredPurchasedFilter(false)}
-                  onClick={() => QueryItemsClick('Purchased')}
+                  onClick={() => FilterItems('Purchased')}
                 >
                   Purchased
                 </div>
           </div>
 
       </div>
-      <div style={{
+      {onSaleFilter ? (<div style={{
               display: 'flex',
               flexWrap: 'wrap',
               justifyContent: 'center',
@@ -351,23 +378,19 @@ export default function Home() {
           <Button variant="secondary" onClick={openModalNewItem} className="mb-4"style={{ border:"none", width:"200px"}}> 
           Add Item <IoIosAddCircleOutline />
         </Button>
-      </div>
+      </div>): <div></div>}
       <ItemModal show={showModalAddItem} onHide={closeModalNewItem}/>
      {itemToEdit ? (<ItemEditModal item={itemToEdit} show={showModalEditItem} onHide={closeModalEditItem}/>) : <div></div>}
-      <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-              alignItems: 'center',
-              margin: '15px', 
-            }}
-          >
 
-            {displayContentItems}
-
-          </div>
-            
+          <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                alignItems: 'center',
+                margin: '20px', 
+              }}> 
+                <ItemContainer items={items} itemFunction={editItem} DeleteIemFunction={deleteItem} filter={onSaleFilter}/> 
+            </div>
 </div>
 
 

@@ -3,9 +3,10 @@ import { BiCartAdd } from 'react-icons/bi';
 import { BsBagPlus } from "react-icons/bs";
 import { LiaEditSolid } from 'react-icons/lia';
 import { RiDeleteBin2Line } from 'react-icons/ri';
+import { RiDeleteBin3Fill, RiDeleteBin3Line } from "react-icons/ri";
 import { useEffect, useState } from 'react';
 
-const ItemCard = ({ item, itemFunction }) => {
+const ItemCard = ({ item, itemFunction, DeleteIemFunction = null, filter=false }) => {
   const [isAddFunction, setIsAddFunction] = useState(false);
   const [isDeleteFunction, setIsDeleteFunction] = useState(false);
   const [isEditFunction, setIsEditFunction] = useState(false);
@@ -13,18 +14,22 @@ const ItemCard = ({ item, itemFunction }) => {
   const functionName = itemFunction.name;
   let iconComponent;
 
-  switch (functionName) {
-    case 'addItemToCart':
-      iconComponent = <BsBagPlus size={18} key={item.id} onClick={() => itemFunction(item)} />;
-      break;
-    case 'editItem':
-      iconComponent = <LiaEditSolid size={18} key={item.id} onClick={() => itemFunction(item)} />;
-      break;
+  if (filter) {
+    switch (functionName) {
+      case 'addItemToCart':
+        iconComponent = <BsBagPlus size={18} key={item.id} onClick={() => itemFunction(item)} />;
+        break;
+      case 'editItem':
+        iconComponent = <div style={{display:"flex", flexDirection:'row'}}> <LiaEditSolid size={15} key={item.id} onClick={() => itemFunction(item)} /> <RiDeleteBin3Line  size={15} key={`delete_${item.id}`}  onClick={() => DeleteIemFunction(item)} /></div>;
+        break;
       case 'deleteItem':
         iconComponent = <RiDeleteBin2Line size={18} key={item.id} onClick={() => itemFunction(item)} />;
         break;
-    default:
-      iconComponent = <BsBagPlus size={18} key={item.id} onClick={() => itemFunction(item)} />;
+      default:
+        iconComponent = <BsBagPlus size={18} key={item.id} onClick={() => itemFunction(item)} />;
+    }
+  } else {
+    iconComponent = <p></p> ; 
   }
 
   const cardStyle = {

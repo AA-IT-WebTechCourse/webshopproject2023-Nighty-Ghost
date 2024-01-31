@@ -6,7 +6,7 @@ from rest_framework import serializers
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from django.contrib.auth.models import User
-from .serializers import CartSerializer,ItemSerializer, RegisterSerializer, LoginSerializer
+from .serializers import CartSerializer,ItemSerializer, RegisterSerializer, LoginSerializer, EditSerializer, MyItemsSerializer
 from .models import CartModel, Item, OrderItems
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets
@@ -69,10 +69,38 @@ class RegisterView(APIView):
                 password=serializer.data["password"],
             )
         except IntegrityError:
-            return Response(f"same user name", status=400)
+            return Response(f"User with provided informations already exist", status=400)
         if user is not None:
             return Response(f"new user is: {user.get_username()}")
         return Response("no new user")
+
+class EditAccountView(APIView):
+    authentication_classes = [authentication.SessionAuthentication, JWTAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = EditSerializer
+
+    def put(self, request):
+        user = request.user
+        print(request.data)
+        serializer = self.serializer_class(data=request.data)
+        
+        #serializer = UserSerializer(
+                                    # {'password' : request.data['old_password'],
+                                    # 'new_password' : request.data['new_password']}),
+
+        if serializer.is_valid():
+            print('serializer\n', serializer['password'], user.check_password( 'pass1'))
+            # Check old password and update the password
+            if user.check_password(request.data['password']):
+                print('Here')
+                user.set_password(request.data['new_password'])
+                user.save()
+                return Response({'msg': 'Password updated successfully.'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'msg': 'Incorrect old password.'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            print(serializer.errors)
+            return Response({'msg': 'Incorrect.'}, status=status.HTTP_400_BAD_REQUEST)
 
 class CartView(viewsets.ModelViewSet):
     authentication_classes = [authentication.SessionAuthentication, JWTAuthentication]
@@ -128,35 +156,40 @@ class CartView(viewsets.ModelViewSet):
             return JsonResponse({'msg': "not valid"}, status = 400)
         
 
-        try:
+        #try:
             
-            item = Item.objects.get(id=serializer.data["added_item"])
-            #print("DEBUG")
-            # print("[BUYER]", user, type(user))
-            # print("[BUYER]", user.id, type(user.id))
-            # print("[BUYER]", user.username, type(user.username))
-            # print("[SELLER] ", item.seller.id, type(item.seller.id))
-            # print("[SELLER] ", item.seller.username, type(item.seller.username))
+        item = Item.objects.get(id=serializer.data["added_item"])
+        #print("DEBUG")
+        # print("[BUYER]", user, type(user))
+        # print("[BUYER]", user.id, type(user.id))
+        # print("[BUYER]", user.username, type(user.username))
+        # print("[SELLER] ", item.seller.id, type(item.seller.id))
+        # print("[SELLER] ", item.seller.username, type(item.seller.username))
 
 
-            if item.is_sold == False :
-                # TO DO : REMOVE ADDED ITEM PRICE
-                if item.seller.id != user.id:
+        if item.is_sold == False :
+            # TO DO : REMOVE ADDED ITEM PRICE
+            if item.seller.id != user.id:
+                cartitem = CartModel.objects.filter(added_item__id=serializer.data["added_item"]).first()
+                if cartitem:
+                    #Item already in cart 
+                    return JsonResponse({'msg': "Item already in your cart"}, status = 400)
+                else :
                     print("ADDED")
                     CartModel.objects.create(added_by = user,
-                                        added_item = item,)
-                    return JsonResponse({'msg': "Item added to cart successfully"}, status = 200)
-                else:
-                    print("Not ADDED")
-                    return JsonResponse({'msg': " Add failed : this item belongs to you"}, status = 400)
-            else :
+                                        added_item = item)
+                    return JsonResponse({'msg': "Item successfully added to cart "}, status = 200)
+            else:
                 print("Not ADDED")
-                return JsonResponse({'msg': " Add failed : Item no longer available"}, status = 400)
+                return JsonResponse({'msg': " Add failed : this item belongs to you"}, status = 400)
+        else :
+            print("Not ADDED")
+            return JsonResponse({'msg': " Add failed : Item no longer available"}, status = 400)
             
         
-        except Exception as e:
-            print("[DEBUG ERROR ADD]\n", e)
-            return JsonResponse({'msg': str("Unable to add item due to "+ str(e))}, status = 200)
+        # except Exception as e:
+        #     print("[DEBUG ERROR ADD]\n", e)
+            #return JsonResponse({'msg': str("Unable to add item due to "+ str(e))}, status = 400)
         
     def remove(self, request):
         added_id = request.data["itemId"]
@@ -205,10 +238,14 @@ class ItemViewPublic(viewsets.ModelViewSet):
             search_term = request_data.get('SearchTerm', '')
             print("[DEBUG]  \n",search_term,"\n")
 
-            items = Item.objects.filter(title__icontains=search_term)
-            serialized_items = ItemSerializer(items, many=True).data
+            if search_term != '':
+                items = Item.objects.filter(title__icontains=search_term)
+            else:
+                items = Item.objects.all()
 
+            serialized_items = ItemSerializer(items, many=True).data
             return JsonResponse({'items': serialized_items})
+                
         
         except Exception as e:
             print("Error detected:\nFunction search_item(request)", e)
@@ -244,26 +281,41 @@ class ItemView(viewsets.ModelViewSet):
 
     def list(self, request):
         user = request.user
+
         try:
-            
+            # filter_serializer = MyItemsSerializer(  sold_filter = request.data['sold_filter'],
+            #                                     onsale_filter = request.data['onsale_filter'],
+            #                                     purchased_filter = request.data['purchased_filter'],
+            #                                     )
+
             sold_item =  Item.objects.filter(seller=user, is_sold=True)
             avalaible_items = Item.objects.filter(seller=user, is_sold=False)
 
             
             serialized_sold_items = self.serializer_class(sold_item, many=True).data
-            
-            serialized_not_sold_items = self.serializer_class(avalaible_items, many=True).data
+
+            print("\n[DEBUBG SOLD] : ", serialized_sold_items)
+
+            serialized_on_sale_items = self.serializer_class(avalaible_items, many=True).data
+            print("\n[DEBUBG ONSALE] : ", serialized_on_sale_items)
+
+            purchased_items = OrderItems.objects.filter(user=request.user)
+            purchased_item_ids = purchased_items.values_list('item', flat=True)
+            purchased_items_data = Item.objects.filter(id__in=purchased_item_ids)
+            serialized_purchased_items = self.serializer_class(purchased_items_data, many=True).data
+            print("[DEBUBG PURCHASED] : ", serialized_purchased_items)
             
             for item in serialized_sold_items:
                 item['image'] = self.get_image_data(item)
 
-            for item in serialized_not_sold_items:
+            for item in serialized_on_sale_items:
                 item['image'] = self.get_image_data(item)
 
 
             response_data = {
                 "sold": serialized_sold_items,
-                "not_sold": serialized_not_sold_items
+                "onsale": serialized_on_sale_items,
+                "purchased" : serialized_purchased_items
             }
             print("END LIST ITEMS")
             return JsonResponse({'items': response_data}, status=200)
@@ -418,7 +470,7 @@ class ValidateCartView(viewsets.ModelViewSet):
 
             corresponding_item = Item.objects.filter(id = product_id).first()
             corresponding_cart_item = CartModel.objects.filter(added_by = user, added_item__id=product_id)
-            
+            serialized_item = ItemSerializer(corresponding_item).data
             print("'\n\n'[CORREPONDING ITEM]", corresponding_cart_item[0].added_by ,corresponding_cart_item[0].id )
 
             if corresponding_item.is_sold == True : 
@@ -441,23 +493,24 @@ class ValidateCartView(viewsets.ModelViewSet):
             else :
                 #Price has changed
                 #Transaction halted
-                print()
-                serialized_item = serialize('json', [corresponding_item])
-                return JsonResponse({"msg": "Price has changed", 
+            
+                print("[DEBUG SERIALIZER ITEM]\n", serialized_item)
+
+                return JsonResponse({"msg": "Price initially " + str(product_price) + " € has been updated by seller", 
                                         "Item" : serialized_item, 
-                                        "error_type" : "price"}, status=status.HTTP_400_BAD_REQUEST)
+                                        "error_type" : "price"}, status=status.HTTP_409_CONFLICT)
 
         for purchase in successful_purchases:
             purchase.save()
 
-        Item.objects.filter(id__in=[item.id for item in items_to_save]).update(is_sold=True)
+        #Item.objects.filter(id__in=[item.id for item in items_to_save]).update(is_sold=True)
         # Delete the user's cart
         user_cart = CartModel.objects.filter(added_by = user)
-        user_cart.delete()
+        #user_cart.delete()
 
         success_message = "Cart validated and items purchased successfully."
 
-        return JsonResponse({"message": success_message}, status=status.HTTP_200_OK)
+        return JsonResponse({"msg": success_message, 'error_type':'none'}, status=status.HTTP_200_OK)
 
 
 @csrf_exempt

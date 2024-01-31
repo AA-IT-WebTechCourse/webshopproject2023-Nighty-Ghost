@@ -21,13 +21,13 @@ import Badge from 'react-bootstrap/Badge';
 import ItemCard from './ItemCard'
 import ContainerCart from './cartItem'
 
-function NvBar() {
+const  NvBar = ({cartCount,setCartCount}) => {
 
   const [isAuth, setisAuth] = useState(false);
   const TOKEN_KEY = "tokens"
   
     
-  const [ItemCartCount, setItemCartCount] = useState(0);
+  //const [ItemCartCount, setItemCartCount] = useState(0);
   const [SearchTerm, setSearchTerm] = useState('');
 
   const [content, setcontent] = useState([]);
@@ -125,92 +125,51 @@ function NvBar() {
     setFlashMessage({ message, type });
   };
 
-  // SEARCH
-  
-  const searchItemFunction = async () => {
-    try {
-      console.log("Submit cliked")
-      console.log("SearchTerm : ",SearchTerm)
-      
-      const response = await fetch('/api/search/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          SearchTerm: SearchTerm,
-        }),
-      });
-      const data = await response.json()
-      console.log("Response for search is : ", response)
-      console.log("Data sent back is : ", data)
-      if(response.ok){
-        showFlashMessage(data.length +'successfully!', 'success')
-      }
-
-      if (!response.ok) {
-        showFlashMessage('Search failed', 'error')
-        throw new Error('Search failed');
-      }
-
-    } catch (error) {
-      console.error('Error during search:', error);
-    }
-  };
-    // RETRIEVE ITEMS 
-
-
-    const payItems = async () => {
-      getCartItems();
-      checkAuth();
-      const tokens = getToken();
-      try {
-        
-        if(isAuth){
-              const response = await fetch("/api/validate-cart/", {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${tokens.access}`,
-                },
-                body: JSON.stringify({
-                  items: cartItems,
-                }),
-              
-              });
-              const data = await response.json();
-              const msg = data.msg;
-              if(response.ok)
-              {
-                  showFlashMessage(msg, 'success')
-                  setCartItems(null)
-                  setCartEmpty(true)
-                  setItemCartCount(0)
-                  
-              //showFlashMessage(" Cart Items from cart",'succes')
-          } else {
-              
-              showFlashMessage("Error occured while trying to validate the cart : ",'error')
-              showFlashMessage(msg, 'success')
-              showFlashMessage(msg, 'error')
-          }
-        }
-        else{
-          showFlashMessage("Only authenticated users can see the content of their cart",'error')
-        }
-    
-      } catch (error) {
-        showFlashMessage(String(error), 'error')
-        console.error('Error occured', error);
-      }
-    };
 
   // SHOW AND HIDE CART
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
+  const getCartItems = async () => {
+    const tokens = getToken();
+    try {
+          console.log("Try to fetch cartItems")
+          const response = await fetch("/api/update-cart/", {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${tokens.access}`,
+            },
+          
+          });
+          const data = await response.json();
+          const msg = data.msg
+          const itemReturned = data.item
+          if(response.ok)
+          { 
+              setCartItems(data.items)
+              console.log(cartItems)
+              console.log("ITEMS ARE : \n", data.items)
+              setCartCount(data.items.length)
+
+          //showFlashMessage(" Cart Items from cart",'succes')
+      } 
+
+      else {
+
+          showFlashMessage("Error occured while trying to get the cart",'error')
+      }
+      
+  
+    } catch (error) {
+      showFlashMessage(String(error), 'error')
+      console.error('Error occured', error);
+    }
+  };
 
   const showCart = () => {
     setIsPanelOpen(!isPanelOpen);
+    getCartItems();
+    
   };
 
   const hideCart = () => {
@@ -231,7 +190,7 @@ function NvBar() {
     top: 0,
     right: 0, 
     transition: '0.5s', 
-    zIndex: 1,
+    zIndex: 3,
   };
 
   const overlayStyle = {
@@ -241,7 +200,7 @@ function NvBar() {
     left: 0,
     width: '100%',
     height: '100%',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+    backgroundColor: 'rgba(0, 0, 0, 0.1)', 
     zIndex: 2, 
   };
 
@@ -289,23 +248,25 @@ function NvBar() {
 
   return (
     <Navbar expand="lg" className="bg-body-tertiary">
-      <Container fluid>
+      <Container fluid style={{display:'flex', flexDirection:'row'}}>
+        <div style={{display:'flex', flexDirection:'column', width:'88%'}}> 
         <Navbar.Brand href="#">MarketFlow <BiCart /> </Navbar.Brand>
         <Navbar.Toggle aria-controls="navbarScroll" />
-        <Navbar.Collapse id="navbarScroll" style={{maxWidth: "900px"}}>
+        <Navbar.Collapse id="navbarScroll" style={{width: "300px"}}>
 
         </Navbar.Collapse>
-        <Nav className="me-auto" >
- 
+        </div>
+        <Nav className="me-auto" style={{display:'flex', flexDirection:'row', alignContent:'flex-end', width:"100px",}}>
+              
             
             <div style={{ display: 'flex', alignItems: 'center', marginRight:"15px", cursor:"pointer",  }}> 
   
-            <div style={{ position: 'relative' }}>
-      <BsBagCheck size={18} id="cart" onClick={showCart} />
-      <Badge bg="warning" style={{ position: 'absolute', bottom: -7, left: 7, fontSize:"8px", background:"yellow", color:"black" }}>
-        {ItemCartCount}
-      </Badge>
-    </div>
+                <div style={{ position: 'relative' }}>
+                <BsBagCheck size={18} id="cart" onClick={showCart} />
+                <Badge bg="warning" style={{ position: 'absolute', bottom: -7, left: 7, fontSize:"8px", background:"yellow", color:"black" }}>
+                  {cartCount}
+                </Badge>
+              </div>
             </div> 
             
             <NavDropdown title={<BsPerson />} id="basic-nav-dropdown">
@@ -329,7 +290,8 @@ function NvBar() {
                   } 
               
             </NavDropdown>
-          </Nav>
+        
+        </Nav>
       </Container>
       <div 
 // @ts-ignore
@@ -354,7 +316,7 @@ function NvBar() {
 
               
           </div>
-          <ContainerCart setItemCartCount={setItemCartCount} />
+          <ContainerCart setItemCartCount={setCartCount} itemCart = {cartItems}/>
 
         </div>
       </div>

@@ -107,12 +107,12 @@ function Login_Reg() {
       <Card className='bg-white my-5 mx-auto' style={{ borderRadius: '1rem', maxWidth: '500px', boxShadow: ' 2px 2px 13px 13px #D3D3D3',}}>
         <Card.Body className='p-5 w-100 d-flex flex-column'>
           <Form onSubmit={SubmitForm}>
-            <div className="mb-4">
-              <FaFacebookF className="m-1" />
-              <FaTwitter className="m-1" />
-              <FaGoogle className="m-1" />
-              <FaGithub className="m-1" />
-            </div>
+          <div className="d-flex justify-content-center align-items-center mb-4">
+            <FaFacebookF className="m-1" />
+            <FaTwitter className="m-1" />
+            <FaGoogle className="m-1" />
+            <FaGithub className="m-1" />
+          </div>
 
             <Form.Group className="mb-4">
               <Form.Control type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)}/>

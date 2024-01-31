@@ -7,6 +7,15 @@ class CartSerializer(serializers.ModelSerializer):
         model = CartModel
         fields = "__all__"
 
+class EditSerializer(serializers.Serializer):
+    new_password = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)
+
+class MyItemsSerializer(serializers.Serializer):
+    sold_filter = serializers.BooleanField(required=True)
+    onsale_filter = serializers.BooleanField(required=True)
+    purchased_filter = serializers.BooleanField(required=True)
+
 class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item

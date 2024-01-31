@@ -9,21 +9,28 @@ function displayNotification(id, msg) {
   const element = document.getElementById(id);
   if (element) {
 
+
     element.innerHTML = msg;
     element.style.display = "block";
 
     setTimeout(() => {
-      element.style.display = "none";
+      //element.style.display = "none";
       element.innerHTML = ""; // Clear the comment
     }, 10000);
   }
+  else{
+
+
+  }
 }
 
-const ContainerCart = ({ setItemCartCount }) => {
+const ContainerCart = ({ setItemCartCount, itemCart }) => {
   const TOKEN_KEY = "tokens"
   const [flashMessage, setFlashMessage] = useState(null);
   const [cartItems, setCartItems] = useState([]);
-  
+  useEffect(() => {
+    setCartItems(itemCart);
+  }, [itemCart]);
   const showFlashMessage = (message, type) => {
     setFlashMessage({ message, type });
   };
@@ -44,44 +51,9 @@ const ContainerCart = ({ setItemCartCount }) => {
       return
     }    
   }
-
-  const getCartItems = async () => {
-    const tokens = getToken();
-    try {
-      
-          const response = await fetch("/api/update-cart/", {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${tokens.access}`,
-            },
-          
-          });
-          const data = await response.json();
-          const msg = data.msg
-          const itemReturned = data.item
-          if(response.ok)
-          { 
-              setCartItems(data.items)
-              console.log("ITEMS ARE : \n", data.items)
-              setItemCartCount(data.items.length)
-
-          //showFlashMessage(" Cart Items from cart",'succes')
-      } else {
-          displayNotification(`${itemReturned.id}-update_info`, msg)
-          showFlashMessage("Erro occured while trying to get the cart",'error')
-      }
-      
   
-    } catch (error) {
-      showFlashMessage(String(error), 'error')
-      console.error('Error occured', error);
-    }
-  };
-  
-
   const payItems = async () => {
-    getCartItems();
+  
     const tokens = getToken();
     try {
 
@@ -98,6 +70,8 @@ const ContainerCart = ({ setItemCartCount }) => {
             });
             const data = await response.json();
             const msg = data.msg;
+            const error_type = data.error_type;
+            const itemReturned = data.Item
             if(response.ok)
             {
                 showFlashMessage(msg, 'success')
@@ -106,9 +80,36 @@ const ContainerCart = ({ setItemCartCount }) => {
                 
             //showFlashMessage(" Cart Items from cart",'succes')
         } else {
+          showFlashMessage("Cart Validation failed", 'error')
+          if(error_type === 'price')
+          {
+            console.log("PRICE HAS CHANGED");
+            console.log('data is: ', data)
+            displayNotification(`${itemReturned.id}-update_info`, msg)
+
+            setCartItems((prevCartItems) =>
+              prevCartItems.map((cartItem) =>
+                cartItem.added_item.id === itemReturned.id
+                  ? {
+                      ...cartItem,
+                      added_item: {
+                        ...cartItem.added_item,
+                        price: itemReturned.price,
+                      },
+                    }
+                  : cartItem
+              )
+            );
             
-            showFlashMessage("Error occured while trying to validate the cart : ",'error')
-            showFlashMessage(msg, 'error')
+            
+          }
+          if(error_type === 'sold'){
+            console.log("ITEM NO LONGER AVAIlABLE");
+            console.log('data is: ', data)
+            displayNotification(`${itemReturned.id}-update_info`, msg);
+
+          }
+           
         }
       
   
@@ -137,6 +138,7 @@ const ContainerCart = ({ setItemCartCount }) => {
             console.log('Ondelete In cartItem')
             console.log("TRYING TO SET CART ITEM")
             setCartItems((prevCartItems) => prevCartItems.filter((item) => item.added_item.id !== itemId));
+            setItemCartCount(prevCount => prevCount -1)
             console.log(setCartItems)
         } else {
             showFlashMessage("Erro occured",'error')
@@ -148,18 +150,6 @@ const ContainerCart = ({ setItemCartCount }) => {
     }
   };
 
-  useEffect(() => {
-    getCartItems();
-    const intervalId = setInterval(() => {
-      getCartItems();
-    },  30000); 
-
-    return () => clearInterval(intervalId);
-  }, []); 
-
-
-
- 
     
   const cardStyle = {
     display : 'flex',
@@ -191,7 +181,7 @@ const ContainerCart = ({ setItemCartCount }) => {
       {cartItems && cartItems.length > 0 && cartItems.map((item, index) => ( 
       <div 
       // @ts-ignore
-          style={cardStyle} id={`item_card_${item.added_item.id}`}>
+          style={cardStyle} id={`item_card_${item.added_item.id}`} key={`item_card_${item.added_item.id}`}>
 
           {flashMessage && (
                   <FlashMessage
@@ -278,18 +268,22 @@ const ContainerCart = ({ setItemCartCount }) => {
                   {new Date(item.added_item.date_added).toISOString().split('T')[0]}
                   
                 </div>
-                    <div id={`${item.added_item.id}-update_info`} style = { {
-                          display: 'none',
+                    
+              </div>
+              <div id={`${item.added_item.id}-update_info`} style = { {
+                          display: 'block',
                           borderRadius: '5px',
                           margin: '10px',
                           width: '80%',
                           backgroundColor: '#F84F31',
                           color: 'white',
-                          textAlign: 'center'
+                          textAlign: 'center',
+                          fontSize:"11px"
                         }}>
+
+                          
                     
                     </div>
-              </div>
             </div>
       </div> ))}
       

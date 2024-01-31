@@ -4,12 +4,11 @@ import { FaFacebookF, FaTwitter, FaGoogle, FaGithub } from 'react-icons/fa';
 import FlashMessage from '../../../components/FlashMessage' 
 
 
-function Reg() {
+function EditAccount() {
 
   const TOKEN_KEY = "tokens"
-  const [username, setUsername] = useState('');
+  const [oldPassword, setOldPassword] = useState('');
   const [password, setPassword] = useState('');
-  const [email, setEmail] = useState('');
 
   const [info, setInfo] = useState("");
 
@@ -23,27 +22,35 @@ function Reg() {
     setFlashMessage(null);
   };
 
-  const handleRegister = async () => {
-    const res = await fetch("/api/register/", {
+  const SubmitEditAccount = async () => {
+    const tokens = getToken();
+    const res = await fetch("/api/edit-account/", {
       headers: {
         "Content-type": "application/json",
       },
-      method: "POST",
-      body: JSON.stringify({username, email, password}),
+      method: "PUT",
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${tokens.access}`,
+      },
+      body: JSON.stringify({
+        password: oldPassword,
+        new_password: password
+
+      }),
     });
     
     const data = await res.json()
-    
+    console.log(data)
+    const msg = data.msg
     if(res.ok){
-      localStorage.setItem(TOKEN_KEY,JSON.stringify(data))
-      showFlashMessage('Register successful!', 'success')
+      
+      showFlashMessage(msg, 'success')
       console.log(data)
-      setInfo(JSON.stringify(data))
     }
     if (!res.ok) {
-      console.log("Register failed")
-      showFlashMessage('Register failed. Username must not contain special characters and be unique', 'error')
-      throw new Error('Login failed');
+      console.log("Failed")
+      showFlashMessage(msg, 'error');
     }
     
   }
@@ -77,18 +84,16 @@ function Reg() {
         </div>
 
 
-          <Form.Group className="mb-4">
-            <Form.Control type="text"  placeholder="Username" value={username}  onChange={(e) => setUsername(e.target.value)} />
-          </Form.Group>
-          <Form.Group className="mb-4">
-            <Form.Control type="email" placeholder="Email" value={email}  onChange={(e) => setEmail(e.target.value)} />
-          </Form.Group>
-          <Form.Group className="mb-4">
-            <Form.Control type="password" placeholder="Password" value={password}  onChange={(e) => setPassword(e.target.value)}/>
+          <Form.Group className="mb-4" style={{ marginBottom:"20px"}}>
+            <Form.Control type="password"  placeholder="Current Password" value={oldPassword}  onChange={(e) => setOldPassword(e.target.value)} />
           </Form.Group>
 
-          <Button variant="dark" className="mb-4 w-100" onClick={handleRegister}>
-            Sign up
+          <Form.Group className="mb-4">
+            <Form.Control type="password" placeholder="New Password" value={password}  onChange={(e) => setPassword(e.target.value)}/>
+          </Form.Group>
+
+          <Button variant="dark" className="mb-4 w-100" onClick={SubmitEditAccount}>
+            Update
           </Button>
         </Form>
         
@@ -100,4 +105,4 @@ function Reg() {
   );
 }
 
-export default Reg;
+export default EditAccount;
