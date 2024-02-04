@@ -1,16 +1,12 @@
 // @ts-ignore
 
 import Container from 'react-bootstrap/Container';
-import { Link } from 'react-router-dom';
-import Form from 'react-bootstrap/Form';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
-import { Row, Col,  InputGroup, FormControl } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css'; 
 import 'bootstrap-icons/font/bootstrap-icons.css'; 
 import { AiOutlineClose } from 'react-icons/ai';
 import React, { useEffect,useState } from 'react';
-import FlashMessage from './FlashMessage' 
 import NavDropdown from 'react-bootstrap/NavDropdown';
 import { BiCart } from 'react-icons/bi';
 import { BsSearch } from "react-icons/bs";
@@ -82,6 +78,10 @@ const  NvBar = ({cartCount,setCartCount}) => {
 
     return () => clearInterval(intervalId);
   }, []); 
+
+  useEffect(() => {
+    getCartItems();
+  }, [])
 
   
 
@@ -212,44 +212,12 @@ const  NvBar = ({cartCount,setCartCount}) => {
   };
   
 
-  // DELETE ITEM FROM CART
-  const updateInfoItem = async (itemId) => {
-    checkAuth();
-    const tokens = getToken();
-    try {
-      
-      if(isAuth){
-        const response = await fetch("/api/update-cart/", {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${tokens.access}`,
-          },
-          body: JSON.stringify({
-            itemId: itemId,
-          }),
-        });
-        if(response.ok)
-        {
-            showFlashMessage("Item deleted from cart",'succes')
-        } else {
-            showFlashMessage("Erro occured",'error')
-        }
-      }
-      else{
-        showFlashMessage("Only authenticated users can order item(s)",'error')
-      }
-  
-    } catch (error) {
-      showFlashMessage(String(error), 'error')
-      console.error('Error occured', error);
-    }
-  };
+
 
   return (
     <Navbar expand="lg" className="bg-body-tertiary">
       <Container fluid style={{display:'flex', flexDirection:'row'}}>
-        <div style={{display:'flex', flexDirection:'column', width:'88%'}}> 
+        <div style={{display:'flex', flexDirection:'column', width:'84%'}}> 
         <Navbar.Brand href="#">MarketFlow <BiCart /> </Navbar.Brand>
         <Navbar.Toggle aria-controls="navbarScroll" />
         <Navbar.Collapse id="navbarScroll" style={{width: "300px"}}>

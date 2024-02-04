@@ -1,10 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Modal, Form } from 'react-bootstrap';
 import { FileUploader } from "react-drag-drop-files";
+import FlashMessage from './FlashMessage'
 
-const ItemEditModal =  ({ show, onHide, item })=> {
-    
+const ItemEditModal = ({ show, onHide, setItems, item }) => {
+  const [flashMessage, setFlashMessage] = useState(null);
+
+  const showFlashMessage = (message, type) => {
+    setFlashMessage({ message, type });
+  };
+
+  const closeFlashMessage = () => {
+    setFlashMessage(null);
+  };
+
+
   const [isChecked, setIsChecked] = useState(true);
+
   const choiceCheckbox = () => {
     setIsChecked(!isChecked);
   };
@@ -13,30 +25,30 @@ const ItemEditModal =  ({ show, onHide, item })=> {
   const getToken = () => {
 
     if (typeof window !== 'undefined') {
-      
+
       const value = localStorage.getItem(TOKEN_KEY);
-      if(!value) return
+      if (!value) return
       const tokens = JSON.parse(value)
       return tokens
     }
     else {
       return
-    }    
+    }
   }
 
   const checkAuth = async () => {
     const tokens = getToken();
     console.log("checkAuth: ", tokens)
-    
+
     if (tokens) {
       const res = await fetch("/api/me/", {
         headers: {
           "Authorization": `Bearer ${tokens.access}`
         }
       });
-  
+
       if (res.ok) {
-        
+
         setisAuth(true);
         console.log("User is authenticated", isAuth)
       } else {
@@ -45,14 +57,14 @@ const ItemEditModal =  ({ show, onHide, item })=> {
       }
       return tokens
     } else {
-      console.error("Tokens or access token is undefined"); 
+      console.error("Tokens or access token is undefined");
       return
     }
   };
 
   const formDataToSend = new FormData();
   const [formData, setFormData] = useState({
-    
+
     title: '',
     url: '',
     description: '',
@@ -60,9 +72,9 @@ const ItemEditModal =  ({ show, onHide, item })=> {
   });
 
   useEffect(() => {
-    
+
     setFormData({
-      
+
       title: item.title || '',
       url: item.img_url || '',
       description: item.description || '',
@@ -90,18 +102,32 @@ const ItemEditModal =  ({ show, onHide, item })=> {
     formDataToSend.append('title', formData.title);
     formDataToSend.append('description', formData.description);
     formDataToSend.append('price', formData.price);
-    formDataToSend.append('url', formData.url);
-  
+
+
     if (!isChecked) {
-      formDataToSend.append('file', file[0]);
+      if (file && file.length > 0) {
+        formDataToSend.append('file', file[0]);
+        formDataToSend.append('url', '');
+      }
+      else {
+        //flashMessage
+        showFlashMessage("Image (or url Image) must be provided",'error')
+        return Promise.reject('No file provided');
+      }
     }
-  
+    else {
+      formDataToSend.append('url', formData.url);
+      formDataToSend.append('file', null);
+    }
+
     try {
       checkAuth();
       const tokens = getToken();
-      console.log("Sent form data:");
+      console.log("\nForm DATA  SEND:");
       console.log(formData)
-  
+      console.log("\nForm DATA TO SEND:");
+      console.log(formDataToSend.values)
+
       const response = await fetch('/api/my_items/', {
         method: 'PUT',
         headers: {
@@ -109,31 +135,33 @@ const ItemEditModal =  ({ show, onHide, item })=> {
         },
         body: formDataToSend,
       });
-  
+
       const data = await response.json();
-      console.log("Response for loggin is : ", response);
+      console.log("Response for updating is : ", response);
       console.log("Data sent back is : ", data);
-  
+
       if (response.ok) {
         //showFlashMessage('Item added successfully!', 'success');
-        setFormData({
-            
-            title: item.title,
-            url: item.url,
-            description: item.description,
-            price: item.price,
-          });
+        const updatedItem = data['updated_item']
+        console.log("Updated item is : ", updatedItem)
 
-          setFile(null);
+        setItems(prevItems => prevItems.map(prevItem =>
+          prevItem.id === updatedItem.id ? updatedItem : prevItem
+        ));
+        onHide();
+
+
+        setFile(null);
       }
-      else{
+      else {
+
 
       }
-  
+
     } catch (error) {
       console.error('Error during new item creation:', error);
       setFormData({
-        
+
         title: item.title,
         url: item.url,
         description: item.description,
@@ -143,7 +171,7 @@ const ItemEditModal =  ({ show, onHide, item })=> {
       setFile(null);
     }
   };
-  
+
 
   const SubmitForm = async (event) => {
     event.preventDefault();
@@ -158,6 +186,13 @@ const ItemEditModal =  ({ show, onHide, item })=> {
 
   return (
     <div>
+      {flashMessage && (
+        <FlashMessage
+          message={flashMessage.message}
+          type={flashMessage.type}
+          onClose={closeFlashMessage}
+        />
+      )}
       <Modal id="Modal-Edit-Item" show={show} onHide={onHide}>
         <Modal.Header closeButton>
           <Modal.Title>Edit Item</Modal.Title>
@@ -165,8 +200,8 @@ const ItemEditModal =  ({ show, onHide, item })=> {
         <Modal.Body>
           <Form id="edit-item-form" onSubmit={SubmitForm}>
 
-            <Form.Group controlId="Edit_formTitle" style={{margin:"10px"}}>
-              <Form.Label>Title</Form.Label>
+            <Form.Group controlId="Edit_formTitle" style={{ margin: "10px" }}>
+              <Form.Label> <b>Title</b> </Form.Label>
               <Form.Control
                 type="text"
                 placeholder="Enter title"
@@ -175,9 +210,9 @@ const ItemEditModal =  ({ show, onHide, item })=> {
                 onChange={updateValueForm}
               />
             </Form.Group>
-            
-            <Form.Group controlId="Edit_formDescription" style={{margin:"10px"}}>
-              <Form.Label>Description</Form.Label>
+
+            <Form.Group controlId="Edit_formDescription" style={{ margin: "10px" }}>
+              <Form.Label> <b>Description</b> </Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
@@ -185,67 +220,68 @@ const ItemEditModal =  ({ show, onHide, item })=> {
                 name="description"
                 value={formData.description}
                 onChange={updateValueForm}
+                style={{ height: "150px" }}
               />
             </Form.Group>
-            
-            <Form.Group controlId="Edit_formImg" style={{ margin: '10px' }}>
-                <Form.Label>Picture</Form.Label>
-                <div style={{ margin: '4px', display:'flex', flexDirection:'row', width:'100%' }}>
-                    <div style={{ marginLeft: '6px', display:'flex', flexDirection:'column',  width: '50%' }}>
-                    <label>
-                        <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={choiceCheckbox}
-                            style={{marginLeft:"5px", width:'20%'}}
-                        />
-                        Url
-                    </label>
-                    </div>
 
-                    <div style={{ marginLeft: '6px', display:'flex', flexDirection:'column', width: '50%' }}>
-                    <label>
-                            <input
-                            type="checkbox"
-                            checked={!isChecked}
-                            onChange={choiceCheckbox}
-                            style={{marginLeft:"5px", width:'20%'}}
-                            />
-                            Upload picture
-                    </label>
-                    </div>
+            <Form.Group controlId="Edit_formImg" style={{ margin: '10px' }}>
+              <Form.Label> <b>Picture</b> </Form.Label>
+              <div style={{ margin: '4px', display: 'flex', flexDirection: 'row', width: '100%' }}>
+                <div style={{ marginLeft: '6px', display: 'flex', flexDirection: 'column', width: '50%' }}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={choiceCheckbox}
+                      style={{ marginLeft: "5px", width: '20%' }}
+                    />
+                    Url
+                  </label>
                 </div>
-                {isChecked ? (
-                    <Form.Control
-                    type="text"
-                    placeholder="Picture Url"
-                    name="url"
-                    value={formData.url}
-                    onChange={updateValueForm}
+
+                <div style={{ marginLeft: '6px', display: 'flex', flexDirection: 'column', width: '50%' }}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={!isChecked}
+                      onChange={choiceCheckbox}
+                      style={{ marginLeft: "5px", width: '20%' }}
                     />
-                ) : (
-                    <>
-                    <FileUploader
-                        multiple={true}
-                        handleChange={UpdateFile}
-                        name="file"
-                        types={fileTypes} 
-                    />
-                    <b>
-                        <p style={{ margin: '10px' }}>
-                        {file ? `File name: ${file[0].name}` : 'Picture not uploaded yet'}
-                        </p>
-                    </b>
-                    </>
-                )}
+                    Upload picture
+                  </label>
+                </div>
+              </div>
+              {isChecked ? (
+                <Form.Control
+                  type="text"
+                  placeholder="Picture Url"
+                  name="url"
+                  value={formData.url}
+                  onChange={updateValueForm}
+                />
+              ) : (
+                <>
+                  <FileUploader
+                    multiple={true}
+                    handleChange={UpdateFile}
+                    name="file"
+                    types={fileTypes}
+                  />
+                  <b>
+                    <p style={{ margin: '10px' }}>
+                      {file ? `File name: ${file[0].name}` : 'Picture not uploaded yet'}
+                    </p>
+                  </b>
+                </>
+              )}
             </Form.Group>
 
 
 
 
 
-            <Form.Group controlId="Edit_formPrice" style={{margin:"10px"}}>
-              <Form.Label>Price (€)</Form.Label>
+            <Form.Group controlId="Edit_formPrice" style={{ margin: "10px" }}>
+              <Form.Label> <b>Price (€)</b> </Form.Label>
               <Form.Control
                 type="text"
                 placeholder="Enter price"
@@ -257,10 +293,18 @@ const ItemEditModal =  ({ show, onHide, item })=> {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-
-          <Button variant="primary" onClick={SubmitForm}>
-            Validate
-          </Button>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+          }}>
+            <Button variant="success" onClick={SubmitForm} style={{ width: '100%' }}>
+              Update
+            </Button>
+          </div>
         </Modal.Footer>
       </Modal>
     </div>

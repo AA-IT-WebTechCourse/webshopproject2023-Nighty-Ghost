@@ -192,6 +192,7 @@ class CartView(viewsets.ModelViewSet):
             #return JsonResponse({'msg': str("Unable to add item due to "+ str(e))}, status = 400)
         
     def remove(self, request):
+        """ REMOVE ITEM FROM USER CART"""
         added_id = request.data["itemId"]
         user = request.user
         print("User id : ",user.id)
@@ -220,13 +221,40 @@ class CartView(viewsets.ModelViewSet):
 class ItemViewPublic(viewsets.ModelViewSet):
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
+    
+    def get_image_data(self, obj):
+        print('[DEBUG TRYING TO GET IMG]')
+        if obj.get('img_url'):
+            return obj['img_url'] 
+        elif obj.get('img_upload'):
+            #obj['img_upload'] looks like : /item_images/Capture_décran_tab_option.png
+            print("split : ", obj['img_upload'].split('/')) 
+            
+            _, folder, img_name = obj['img_upload'].split('/')
+            img_path = os.path.join(settings.BASE_DIR, folder, unquote(img_name))
+            with open(img_path, 'rb') as image_file:
+                encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
+                print(obj['img_upload'].split("."))
+                file_extension = obj['img_upload'].split(".")[1]
+                content_type = f'image/{file_extension.lower()}'
+                print("CONTENT TYPE IS ",content_type)
+                return f'data:{content_type};base64,{encoded_image}'
+        else:
+            return None
 
     def get_items(self, request):
         print("HERE")
         try:
-            items = Item.objects.filter(is_sold=False).values()
+            items = Item.objects.filter(is_sold=False)
+
+            
+            serialized_items = self.serializer_class(items, many=True).data
+            #print("[DEBUBG PURCHASED] : ", serialized_purchased_items)
+            
+            for item in serialized_items:
+                item['image'] = self.get_image_data(item)
              
-            return JsonResponse({'items': list(items)})
+            return JsonResponse({'items': serialized_items})
         except Exception as e:
             print(f"Error in get_items: {e}")
             return HttpResponseServerError({'error': 'Server error occurred '+ str(e)})
@@ -260,11 +288,12 @@ class ItemView(viewsets.ModelViewSet):
     img_upload = serializers.ImageField(required=False)
 
     def get_image_data(self, obj):
+        print('[DEBUG TRYING TO GET IMG]')
         if obj.get('img_url'):
             return obj['img_url'] 
         elif obj.get('img_upload'):
             #obj['img_upload'] looks like : /item_images/Capture_décran_tab_option.png
-            print("spliT : ", obj['img_upload'].split('/')) 
+            print("split : ", obj['img_upload'].split('/')) 
             
             _, folder, img_name = obj['img_upload'].split('/')
             img_path = os.path.join(settings.BASE_DIR, folder, unquote(img_name))
@@ -283,49 +312,44 @@ class ItemView(viewsets.ModelViewSet):
         user = request.user
 
         try:
-            # filter_serializer = MyItemsSerializer(  sold_filter = request.data['sold_filter'],
-            #                                     onsale_filter = request.data['onsale_filter'],
-            #                                     purchased_filter = request.data['purchased_filter'],
-            #                                     )
-
             sold_item =  Item.objects.filter(seller=user, is_sold=True)
             avalaible_items = Item.objects.filter(seller=user, is_sold=False)
 
             
             serialized_sold_items = self.serializer_class(sold_item, many=True).data
 
-            print("\n[DEBUBG SOLD] : ", serialized_sold_items)
+            #print("\n[DEBUBG SOLD] : ", serialized_sold_items)
 
             serialized_on_sale_items = self.serializer_class(avalaible_items, many=True).data
-            print("\n[DEBUBG ONSALE] : ", serialized_on_sale_items)
+            #print("\n[DEBUBG ONSALE] : ", serialized_on_sale_items)
 
             purchased_items = OrderItems.objects.filter(user=request.user)
             purchased_item_ids = purchased_items.values_list('item', flat=True)
             purchased_items_data = Item.objects.filter(id__in=purchased_item_ids)
             serialized_purchased_items = self.serializer_class(purchased_items_data, many=True).data
-            print("[DEBUBG PURCHASED] : ", serialized_purchased_items)
+            #print("[DEBUBG PURCHASED] : ", serialized_purchased_items)
             
             for item in serialized_sold_items:
                 item['image'] = self.get_image_data(item)
-
+            
             for item in serialized_on_sale_items:
                 item['image'] = self.get_image_data(item)
 
+            for item in serialized_purchased_items:
+                item['image'] = self.get_image_data(item)
 
             response_data = {
                 "sold": serialized_sold_items,
                 "onsale": serialized_on_sale_items,
                 "purchased" : serialized_purchased_items
             }
-            print("END LIST ITEMS")
+            
             return JsonResponse({'items': response_data}, status=200)
         
         except Exception as e:
             print(f"Error in my_items: {e}")
             return HttpResponseServerError({'error': 'Server error occurred '+ str(e)})
     
-
-
     
     def create(self, request):
         
@@ -348,7 +372,6 @@ class ItemView(viewsets.ModelViewSet):
             if request.data['url'] != '' :
                 serializer_data['img_url'] = request.data['url']
             else :  
-            
                 serializer_data['img_upload'] = request.data['file']
 
             serializer = ItemSerializer(data=serializer_data)
@@ -368,6 +391,7 @@ class ItemView(viewsets.ModelViewSet):
 
     def update(self, request):
         try:
+            print('[DEBUG UPDATE ITEM]\n')
             item_id = request.data['id']
             item = Item.objects.filter(id=item_id).first()
 
@@ -375,6 +399,7 @@ class ItemView(viewsets.ModelViewSet):
                 return JsonResponse({'error': 'Item have been sold'}, status=status.HTTP_400_BAD_REQUEST)
 
             user = request.user
+            print('\nRequest is :\n', request.data)
             serializer_data = {
                 'title': request.data['title'],
                 'description': request.data['description'],
@@ -384,45 +409,61 @@ class ItemView(viewsets.ModelViewSet):
 
             if request.data['url'] != '':
                 serializer_data['img_url'] = request.data['url']
-                serializer_data.pop('img_upload', None)  # Remove img_upload field if present
+                serializer_data['img_upload'] = None  # Remove img_upload field if present
             else:
+                print("[img_upload] is", request.data['file'])
                 serializer_data['img_upload'] = request.data['file']
-                serializer_data.pop('img_url', None)  # Remove img_url field if present
+                serializer_data['img_url'] = None  # Remove img_url field if present
 
             serializer = ItemSerializer(instance=item, data=serializer_data, partial=True)
             if serializer.is_valid():
+                print("\nSerializer is :\n", serializer)
                 serializer.save()
+                
+                item_data = Item.objects.filter(id = item_id)
+                serialized_item = self.serializer_class(item_data, many=True).data
+                print('[DEBUG SERIALIZER]\n', serialized_item )
+                for item in serialized_item:
+                    item['image'] = self.get_image_data(item)
+                print("[DEBUG]\n", serialized_item)
+                return JsonResponse({'msg': 'Item updated successfully','updated_item' : serialized_item[0]}, status=status.HTTP_200_OK)
+            else :
+                print("[DEBUG UPDATE ITEM]: Serializer is not valid")
+                print(serializer.errors)
+                return JsonResponse({'msg': 'Serializer not valid'}, status=status.HTTP_200_OK)
 
-            return JsonResponse({'message': 'Item updated successfully'}, status=status.HTTP_200_OK)
+            
 
         except Exception as e:
+            print(str(e))
             return JsonResponse({'msg': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             
     def remove(self, request):
-        added_id = request.data["itemId"]
-        user = request.user
-        print("User id : ",user.id)
-        print('Item ID : ', added_id )
-        
-        serializer_data = {
-            'added_by': user.id,
-            'added_item': added_id,  
-        }
-        serializer = self.serializer_class(data= serializer_data)
+        """ DELETE USER'S ITEM FROM DATABASE"""
+        print('[DEBUG REMOVE ITEM FROM DATABASE]\n: ', request.data )
+        serializer = ItemSerializer(request.data)
+        if serializer.is_valid:
+            user = request.user
+            item_id = int(request.data["item"]['id'])
+            print("User id : ",user.id)
+            print('Item ID : ', item_id )
+            
+            
+            try:
+                item = Item.objects.get(id=item_id)
+                item.delete()
+                print("Item is:\n", item )
+                print('Item will be deleted')
+                return JsonResponse({'msg': "Item deleted successfully"}, status = 200)
+            except Item.DoesNotExist:
+                print("[DEBUG REMOVE ITEM FROM DATABASE]:", "Item not found in the database")
+                return JsonResponse({'msg': 'Item not found in the database'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            print(serializer.errors)
+            return JsonResponse({'msg': 'Serializer is not valid. An item must be provided'}, status=status.HTTP_404_NOT_FOUND)
 
-        print("Serializer ",serializer, "\n Is valid: ", serializer.is_valid() )
 
-        if not serializer.is_valid():
-            print("[DEBUG] ", "Serializer not valid")
-            return JsonResponse({'msg': "not valid"}, status = 400)
-        item = Item.objects.get(id=serializer.data["added_item"])
-        cart_item = CartModel.objects.filter(added_by = user, added_item = item).first()
-        print("[DEBUG delete Item] : ", cart_item)
-        if cart_item:
-            cart_item.delete()
-            return JsonResponse({'msg': "Item deleted successfully"}, status = 200)
-        else :
-           return JsonResponse({'msg': "Item has not been found"}, status = 400) 
+
       
 
 class AboutMeView(APIView):

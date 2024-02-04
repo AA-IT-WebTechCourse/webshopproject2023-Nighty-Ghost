@@ -4,13 +4,13 @@ import { Modal } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.css';
 // @ts-ignore
 import { Button, Container, Form, Nav, Card, Row, Col, } from 'react-bootstrap';
-import ItemContainer from './../../components/ItemsContainer.js'; 
+import ItemContainer from './../../components/ItemsContainer.js';
 import { useEffect, useState } from "react";
 import NvBar from '../../components/Navbar'
 import UserMenuBar from "../../components/UserMenu";
 import FlashMessage from '../../components/FlashMessage'
-import ItemCard  from './../../components/ItemCard'
-import ItemModal  from './../../components/addNewItem'
+import ItemCard from './../../components/ItemCard'
+import ItemModal from './../../components/addNewItem'
 import ItemEditModal from './../../components/ediItem'
 import { IoIosAddCircleOutline } from "react-icons/io";
 // @ts-ignore
@@ -18,7 +18,7 @@ import { IoIosAddCircleOutline } from "react-icons/io";
 export default function Home() {
 
   // @ts-ignore
-  const [cart, setCart] = useState([]);
+  const [ItemCartCount, setItemCartCount] = useState(0);
   const TOKEN_KEY = "tokens"
   const [isAuth, setisAuth] = useState(false);
   const [flashMessage, setFlashMessage] = useState(null);
@@ -45,7 +45,7 @@ export default function Home() {
     setShowModalAddItem(false);
     console.log(showModalAddItem)
   };
-  
+
   const [showModalEditItem, setShowModalEditItem] = useState(false);
 
   const openModalEditItem = () => {
@@ -61,30 +61,30 @@ export default function Home() {
   const getToken = () => {
 
     if (typeof window !== 'undefined') {
-      
+
       const value = localStorage.getItem(TOKEN_KEY);
-      if(!value) return
+      if (!value) return
       const tokens = JSON.parse(value)
       return tokens
     }
     else {
       return
-    }    
+    }
   }
 
   const checkAuth = async () => {
     const tokens = getToken();
     console.log("checkAuth: ", tokens)
-    
+
     if (tokens) {
       const res = await fetch("/api/me/", {
         headers: {
           "Authorization": `Bearer ${tokens.access}`
         }
       });
-  
+
       if (res.ok) {
-        
+
         setisAuth(true);
         console.log("User is authenticated", isAuth)
       } else {
@@ -93,7 +93,7 @@ export default function Home() {
       }
       return tokens
     } else {
-      console.error("Tokens or access token is undefined"); 
+      console.error("Tokens or access token is undefined");
       return
     }
   };
@@ -106,40 +106,8 @@ export default function Home() {
 
   const [itemToEdit, setItemToEdit] = useState([]);
 
- 
+
   const [items, setItems] = useState([]);
-
-  const fetchItems = async () => {
-    try {
-      let endpoint = '/api/my-items/';
-      
-      
-      if (selectedCategory === 'onSale') {
-        endpoint += '?is_sold=false';
-      } else if (selectedCategory === 'sold') {
-        endpoint += '?is_sold=true';
-      } else if (selectedCategory === 'purchased') {
-        
-      }
-
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setItems(data.items);
-      } else {
-        console.error('Failed to fetch items');
-      }
-    } catch (error) {
-      console.error('Error fetching items:', error);
-    }
-  };
 
   const FilterItems = (category) => {
     if (category === 'onSale') {
@@ -154,8 +122,8 @@ export default function Home() {
       setOnSaleFilter(false);
       setSoldFilter(false);
       setPurchasedFilter(true);
-  };
-}
+    };
+  }
 
 
 
@@ -175,7 +143,7 @@ export default function Home() {
       width: '60%',
       display: 'flex',
       alignContent: 'stretch',
-      marginTop:"40px",
+      marginTop: "40px",
     },
     myItemsFilterMenu: {
       display: 'inline-block',
@@ -198,18 +166,18 @@ export default function Home() {
       color: 'white',
       borderRadius: '5px 0px 0px 5px',
       cursor: 'pointer',
-      transform: onSaleFilter? 'scale(1.2)' : '' 
+      transform: onSaleFilter ? 'scale(1.2)' : ''
     },
     myItemsFilterMenu1: {
       backgroundColor: '#C0E410',
       cursor: 'pointer',
-      transform: soldFilter ? 'scale(1.2)' : '' 
+      transform: soldFilter ? 'scale(1.2)' : ''
     },
     myItemsFilterMenu2: {
       backgroundColor: '#4F9E30',
       borderRadius: '0px 5px 5px 0px',
       cursor: 'pointer',
-      transform: purchasedFilter ? 'scale(1.2)' : '' 
+      transform: purchasedFilter ? 'scale(1.2)' : ''
     },
     myItemsFilterMenuHover: {
       transform: 'scale(1.4)',
@@ -219,94 +187,87 @@ export default function Home() {
 
   // @ts-ignore
 
-    useEffect(() => {
-        checkAuth();
-        const tokens = getToken();
-  
-        const fetchData = async () => {
-          try {
-              const response = await fetch("/api/my_items/", {
-                  method: 'GET',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${tokens.access}`,
-                  },
-                
-                });
-  
-              const data = await response.json();
-              console.log(typeof data.items); // Using typeof for a quick check
-              console.log(Object.keys(data.items).length);
-              setItems(data.items.not_sold);
-              console.log(data.items.not_sold)
-              if (soldFilter) {
-                setItems(data.items.sold);
-              } else if (onSaleFilter) {
-                setItems(data.items.onsale);
-              } else if (purchasedFilter) {
-                setItems(data.items.purchased);
-              } else {
-                // Handle the case where none of the filters is true
-                console.error("No valid filter is true.");
-              }
-          } catch (error) {
-              console.error('Error fetching items:', error);
-          }
-        };
+  useEffect(() => {
+    checkAuth();
+    const tokens = getToken();
 
-        fetchData();
-    }, [onSaleFilter,soldFilter,purchasedFilter]) //
-
-    const deleteItem = async (itemId) => {
-
+    const fetchData = async () => {
       try {
-        checkAuth();
-        const tokens = getToken();
-        console.log("Sent form data:");
-        console.log(formData)
-    
-        const response = await fetch('/api/my_items/', {
-          method: 'PUT',
+        const response = await fetch("/api/my_items/", {
+          method: 'GET',
           headers: {
+            'Content-Type': 'application/json',
             'Authorization': `Bearer ${tokens.access}`,
           },
-          body: {'itemID': itemId},
+
         });
-    
+
         const data = await response.json();
-        console.log("Response for loggin is : ", response);
-        console.log("Data sent back is : ", data);
-    
-        if (response.ok) {
-          //showFlashMessage('Item added successfully!', 'success');
-  
-            setFile(null);
+        console.log(typeof data.items); // Using typeof for a quick check
+        console.log(Object.keys(data.items).length);
+        setItems(data.items.not_sold);
+        console.log(data.items.not_sold)
+        if (soldFilter) {
+          setItems(data.items.sold);
+        } else if (onSaleFilter) {
+          setItems(data.items.onsale);
+        } else if (purchasedFilter) {
+          setItems(data.items.purchased);
+        } else {
+          // Handle the case where none of the filters is true
+          console.error("No valid filter is true.");
         }
-        else{
-  
-        }
-    
       } catch (error) {
-        console.error('Error during new item creation:', error);
-        setFormData({
-          
-          title: item.title,
-          url: item.url,
-          description: item.description,
-          price: item.price,
-        });
-  
-        setFile(null);
+        console.error('Error fetching items:', error);
       }
     };
+
+    fetchData();
+  }, [onSaleFilter, soldFilter, purchasedFilter])
+
+  const deleteItem = async (item) => {
+
+    try {
+      const tokens = getToken();
+
+      const response = await fetch('/api/my_items/', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${tokens.access}`,
+        },
+
+        body: JSON.stringify({
+          item: item,
+        }),
+      });
+
+      const data = await response.json();
+      console.log("Response for deleting item is : ", response);
+
+
+      if (response.ok) {
+        showFlashMessage('Item deleted successfully!', 'success');
+        setItems((prevItems) => prevItems.filter((previtem) => previtem.id !== item.id));
+
+      }
+      else {
+        showFlashMessage('Could not delete', 'error');
+      }
+
+    } catch (error) {
+      console.error('Not authenticated', error);
+
+    }
+  };
 
 
 
   return (
     <div>
-      <UserMenuBar/>
-      <NvBar/>
-      
+      <UserMenuBar />
+      <NvBar cartCount={ItemCartCount} setCartCount={setItemCartCount} />
+
       {flashMessage && (
         <FlashMessage
           message={flashMessage.message}
@@ -314,84 +275,85 @@ export default function Home() {
           onClose={closeFlashMessage}
         />
       )}
-      <div style={{  
-            display: 'flex',
-            flexDirection: 'column',  
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: "5px",
-            marginBottom:"40px",
-            width: '98%',
-          }}>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        margin: "5px",
+        marginBottom: "40px",
+        width: '98%',
+      }}>
 
-          <div style={myItemsFilterstyles.myItemsFilterMenuCtn}>
-                <div
-                  // @ts-ignore
-                  style={{
-                    ...myItemsFilterstyles.myItemsFilterMenu,
-                    ...myItemsFilterstyles.myItemsFilterMenu0,
-                    ...(isHoveredOnSaleFilter && myItemsFilterstyles.myItemsFilterMenuHover),
-                    
-                  }}
-                  onMouseEnter={() => setIsHoveredOnSaleFilter(true)}
-                  onMouseLeave={() => setIsHoveredOnSaleFilter(false)}
-                  onClick={() => FilterItems('onSale')}
-                >
-                  On sale
-                </div>
-                <div
-                  // @ts-ignore
-                  style={{
-                    ...myItemsFilterstyles.myItemsFilterMenu,
-                    ...myItemsFilterstyles.myItemsFilterMenu1,
-                    ...(isHoveredSoldFilter && myItemsFilterstyles.myItemsFilterMenuHover),
-                  }}
-                  onMouseEnter={() => setIsHoveredSoldFilter(true)}
-                  onMouseLeave={() => setIsHoveredSoldFilter(false)}
-                  onClick={() => FilterItems('Sold')}
-                >
-                  Sold
-                </div>
-                <div
-                  // @ts-ignore
-                  style={{
-                    ...myItemsFilterstyles.myItemsFilterMenu,
-                    ...myItemsFilterstyles.myItemsFilterMenu2,
-                    ...(isHoveredPurchasedFilter && myItemsFilterstyles.myItemsFilterMenuHover),
-                  }}
-                  onMouseEnter={() => setIsHoveredPurchasedFilter(true)}
-                  onMouseLeave={() => setIsHoveredPurchasedFilter(false)}
-                  onClick={() => FilterItems('Purchased')}
-                >
-                  Purchased
-                </div>
+        <div style={myItemsFilterstyles.myItemsFilterMenuCtn}>
+          <div
+            // @ts-ignore
+            style={{
+              ...myItemsFilterstyles.myItemsFilterMenu,
+              ...myItemsFilterstyles.myItemsFilterMenu0,
+              ...(isHoveredOnSaleFilter && myItemsFilterstyles.myItemsFilterMenuHover),
+
+            }}
+            onMouseEnter={() => setIsHoveredOnSaleFilter(true)}
+            onMouseLeave={() => setIsHoveredOnSaleFilter(false)}
+            onClick={() => FilterItems('onSale')}
+          >
+            On sale
           </div>
+          <div
+            // @ts-ignore
+            style={{
+              ...myItemsFilterstyles.myItemsFilterMenu,
+              ...myItemsFilterstyles.myItemsFilterMenu1,
+              ...(isHoveredSoldFilter && myItemsFilterstyles.myItemsFilterMenuHover),
+            }}
+            onMouseEnter={() => setIsHoveredSoldFilter(true)}
+            onMouseLeave={() => setIsHoveredSoldFilter(false)}
+            onClick={() => FilterItems('Sold')}
+          >
+            Sold
+          </div>
+          <div
+            // @ts-ignore
+            style={{
+              ...myItemsFilterstyles.myItemsFilterMenu,
+              ...myItemsFilterstyles.myItemsFilterMenu2,
+              ...(isHoveredPurchasedFilter && myItemsFilterstyles.myItemsFilterMenuHover),
+            }}
+            onMouseEnter={() => setIsHoveredPurchasedFilter(true)}
+            onMouseLeave={() => setIsHoveredPurchasedFilter(false)}
+            onClick={() => FilterItems('Purchased')}
+          >
+            Purchased
+          </div>
+        </div>
 
       </div>
-      {onSaleFilter ? (<div style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-              alignItems: 'center',
-              color:'white',
-            }}>
-          <Button variant="secondary" onClick={openModalNewItem} className="mb-4"style={{ border:"none", width:"200px"}}> 
-          Add Item <IoIosAddCircleOutline />
-        </Button>
-      </div>): <div></div>}
-      <ItemModal show={showModalAddItem} onHide={closeModalNewItem}/>
-     {itemToEdit ? (<ItemEditModal item={itemToEdit} show={showModalEditItem} onHide={closeModalEditItem}/>) : <div></div>}
 
-          <div style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                justifyContent: 'center',
-                alignItems: 'center',
-                margin: '20px', 
-              }}> 
-                <ItemContainer items={items} itemFunction={editItem} DeleteIemFunction={deleteItem} filter={onSaleFilter}/> 
-            </div>
-</div>
+      {itemToEdit ? (<ItemEditModal item={itemToEdit} show={showModalEditItem} onHide={closeModalEditItem} setItems={setItems} />) : <div></div>}
+
+      {onSaleFilter ? (<div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        alignItems: 'center',
+        color: 'white',
+      }}>
+        <Button variant="secondary" onClick={openModalNewItem} className="mb-4" style={{ border: "none", width: "200px" }}>
+          New Item <IoIosAddCircleOutline />
+        </Button>
+      </div>) : <div></div>}
+
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        alignItems: 'center',
+        margin: '20px',
+      }}>
+        <ItemContainer items={items} itemFunction={editItem} DeleteIemFunction={deleteItem} filter={onSaleFilter} />
+      </div>
+    </div>
 
 
 

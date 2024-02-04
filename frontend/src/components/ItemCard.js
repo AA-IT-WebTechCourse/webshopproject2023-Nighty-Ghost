@@ -12,6 +12,7 @@ const ItemCard = ({ item, itemFunction, DeleteIemFunction = null, filter=false }
   const [isEditFunction, setIsEditFunction] = useState(false);
   //console.log(item)
   const functionName = itemFunction.name;
+  
   let iconComponent;
 
   if (filter) {
@@ -22,8 +23,6 @@ const ItemCard = ({ item, itemFunction, DeleteIemFunction = null, filter=false }
       case 'editItem':
         iconComponent = <div style={{display:"flex", flexDirection:'row'}}> <LiaEditSolid size={15} key={item.id} onClick={() => itemFunction(item)} /> <RiDeleteBin3Line  size={15} key={`delete_${item.id}`}  onClick={() => DeleteIemFunction(item)} /></div>;
         break;
-      case 'deleteItem':
-        iconComponent = <RiDeleteBin2Line size={18} key={item.id} onClick={() => itemFunction(item)} />;
         break;
       default:
         iconComponent = <BsBagPlus size={18} key={item.id} onClick={() => itemFunction(item)} />;
@@ -98,7 +97,7 @@ const ItemCard = ({ item, itemFunction, DeleteIemFunction = null, filter=false }
           </div>
         </div>
         <div style={{
-          "fontSize": "8px",
+          fontSize: "9px",
           margin: "5px 0px 5px 2px",
           lineHeight: "1.5em",
           height: "4.2em",
