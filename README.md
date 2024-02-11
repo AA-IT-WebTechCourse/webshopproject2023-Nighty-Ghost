@@ -13,7 +13,6 @@ pape-ibrahima.sall@insa-lyon.fr
 ## IMPLEMENTED REQUIREMENTS 
 All requirements have been implemented
 
-
 ## ENV TEST
 OS: Windows
 Navigator: Google
@@ -30,22 +29,21 @@ In `frontend` folder
 ```sh
 npm install
 ```
-## Install NPM Modules
-In `frontend` folder, create a build folder 
+## Install Build folder in root
+In `frontend` folder, to create a build folder:
 ```sh
 npm run build
 ```
 
-
-
 ## RUN PROJECT
-In backend folder:
+- In backend folder:
 ```bash
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver   
 ```
-In frontend folder:
+
+-In frontend folder:
 ```bash
 npm start  
 ```
@@ -55,3 +53,6 @@ http://127.0.0.1:8000/
 
 ## Shop Page
 http://localhost:8080 
+
+## Grade
+I would like to get my grade before March 7 (if possible. if not that's okay) 
