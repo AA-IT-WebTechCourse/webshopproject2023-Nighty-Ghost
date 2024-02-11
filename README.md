@@ -1,21 +1,42 @@
-## WEBPROJECT
+# WEBSHOP APPLICATION
 
-#NAME
-Pape Ibrahima SALL
+## ABO STUDENT NUMBER
+2302105
 
-#EMAILS : 
-pape.sall@abo.fi
+## NAME
+Pape Ibrahima SALL (Exchange Student)
+
+## EMAILS : 
+pape.sall@abo.fi (not working anymore)
 pape-ibrahima.sall@insa-lyon.fr 
 
-#WHAT REQUIREMENTS HAVE BEEN IMPLEMENTED?
+## IMPLEMENTED REQUIREMENTS 
+All requirements have been implemented
 
-#HOW TO RUN THE PROJECT
 
-#OS 
-Windows
+## ENV TEST
+OS: Windows
+Navigator: Google
 
-#Install requirements.txt
+## Install requirements.txt
+(virtualenv initially activated) In `backend` folder or root folder, 
+```bash
 pip install -r requirements.txt
+```
 
-#Run
-Run both `backend` and `frontend`
+## Install NPM Modules
+(virtualenv initially activated) In `frontend` folder
+
+```sh
+npm install
+```
+
+## RUN PROJECT
+In backend folder:
+```bash
+python manage.py runserver    
+```
+In frontend folder:
+```bash
+npm start  
+```
