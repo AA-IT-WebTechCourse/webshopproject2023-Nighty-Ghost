@@ -38,7 +38,7 @@ const ItemEditModal = ({ show, onHide, setItems, item }) => {
 
   const checkAuth = async () => {
     const tokens = getToken();
-    console.log("checkAuth: ", tokens)
+     //console.log("checkAuth: ", tokens)
 
     if (tokens) {
       const res = await fetch("/api/me/", {
@@ -50,14 +50,14 @@ const ItemEditModal = ({ show, onHide, setItems, item }) => {
       if (res.ok) {
 
         setisAuth(true);
-        console.log("User is authenticated", isAuth)
+         //console.log("User is authenticated", isAuth)
       } else {
         setisAuth(false);
-        console.log("User is not authenticated")
+         //console.log("User is not authenticated")
       }
       return tokens
     } else {
-      console.error("Tokens or access token is undefined");
+       console.error("Tokens or access token is undefined");
       return
     }
   };
@@ -102,7 +102,12 @@ const ItemEditModal = ({ show, onHide, setItems, item }) => {
     formDataToSend.append('title', formData.title);
     formDataToSend.append('description', formData.description);
     formDataToSend.append('price', formData.price);
-
+    if (!formData.title || !formData.description || !formData.price) {
+      // Flash message
+      showFlashMessage("Title, description, and price must be provided", 'error');
+      onHide();
+      return Promise.reject('Required fields are missing');
+    }
 
     if (!isChecked) {
       if (file && file.length > 0) {
@@ -111,7 +116,8 @@ const ItemEditModal = ({ show, onHide, setItems, item }) => {
       }
       else {
         //flashMessage
-        showFlashMessage("Image (or url Image) must be provided",'error')
+        onHide();
+        showFlashMessage("Edit: Image (or url Image) must be provided",'error')
         return Promise.reject('No file provided');
       }
     }
@@ -123,12 +129,12 @@ const ItemEditModal = ({ show, onHide, setItems, item }) => {
     try {
       checkAuth();
       const tokens = getToken();
-      console.log("\nForm DATA  SEND:");
-      console.log(formData)
-      console.log("\nForm DATA TO SEND:");
-      console.log(formDataToSend.values)
+       //console.log("\nForm DATA  SEND:");
+       //console.log(formData)
+       //console.log("\nForm DATA TO SEND:");
+       //console.log(formDataToSend.values)
 
-      const response = await fetch('/api/my_items/', {
+      const response = await fetch('/api/my-items/', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${tokens.access}`,
@@ -137,29 +143,33 @@ const ItemEditModal = ({ show, onHide, setItems, item }) => {
       });
 
       const data = await response.json();
-      console.log("Response for updating is : ", response);
-      console.log("Data sent back is : ", data);
+       //console.log("Response for updating is : ", response);
+       //console.log("Data sent back is : ", data);
 
       if (response.ok) {
-        //showFlashMessage('Item added successfully!', 'success');
+        const msg = data['msg']
+        showFlashMessage(msg, 'success');
         const updatedItem = data['updated_item']
-        console.log("Updated item is : ", updatedItem)
+         //console.log("Updated item is : ", updatedItem)
 
         setItems(prevItems => prevItems.map(prevItem =>
           prevItem.id === updatedItem.id ? updatedItem : prevItem
         ));
         onHide();
-
-
         setFile(null);
       }
       else {
-
+        const msg = data['msg']
+        onHide();
+        showFlashMessage(msg, 'error');
+        setFile(null);
 
       }
 
     } catch (error) {
-      console.error('Error during new item creation:', error);
+       console.error('Error during update', error);
+      onHide();
+      showFlashMessage("An error occured while updating", 'error');
       setFormData({
 
         title: item.title,
@@ -167,7 +177,6 @@ const ItemEditModal = ({ show, onHide, setItems, item }) => {
         description: item.description,
         price: item.price,
       });
-
       setFile(null);
     }
   };
@@ -180,7 +189,7 @@ const ItemEditModal = ({ show, onHide, setItems, item }) => {
 
   const ValidateAdd = () => {
     // Add your validation logic here
-    console.log('Validating:', formData);
+     //console.log('Validating:', formData);
 
   };
 

@@ -3,7 +3,7 @@ import ItemCard from './ItemCard';
 
 const ItemContainer = ({ items, itemFunction, DeleteIemFunction = null, filter = false }) => {
   const columns = [];
-  console.log("[CONTAINER ITEMS] : ITEMS ARE\n", items)
+   //console.log("[CONTAINER ITEMS] : ITEMS ARE\n", items)
 
   for (let i = 0; i < items.length; i += 3) {
     const columnItems = items.slice(i, i + 3);

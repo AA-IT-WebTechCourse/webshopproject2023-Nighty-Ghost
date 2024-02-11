@@ -6,6 +6,8 @@ import 'bootstrap/dist/css/bootstrap.css';
 import { Button, Container, Form, Nav, Card, Row, Col, } from 'react-bootstrap';
 import ItemContainer from './../../components/ItemsContainer.js';
 import { useEffect, useState } from "react";
+import { checkAuth } from './../../utils'
+import ErrorPage from 'next/error';
 import NvBar from '../../components/Navbar'
 import UserMenuBar from "../../components/UserMenu";
 import FlashMessage from '../../components/FlashMessage'
@@ -35,27 +37,48 @@ export default function Home() {
   };
 
   const [showModalAddItem, setShowModalAddItem] = useState(false);
+  //CHECKING AUTHENTIFICATION
+  const [unAuthenticatedComponent, setUnAuthenticatedComponent] = useState(null);
+  useEffect(() => {
+    const checkAuthentication = async () => {
+      try {
+        const isAuthenticated = await checkAuth();
+        if (isAuthenticated) {
+           //console.log("User is authenticated");
+          setisAuth(true);
+        } else {
+          setisAuth(false);
+          setUnAuthenticatedComponent(<ErrorPage statusCode={403} title='Authentification needed to access this page' />);
+           //console.log("User is not authenticated");
+        }
+      } catch (error) {
+         console.error("Error in checkAuthentication:", error);
+      }
+    };
+
+    checkAuthentication();
+  }, []);
 
   const openModalNewItem = () => {
     setShowModalAddItem(true);
-    console.log(showModalAddItem)
+     //console.log(showModalAddItem)
   };
 
   const closeModalNewItem = () => {
     setShowModalAddItem(false);
-    console.log(showModalAddItem)
+     //console.log(showModalAddItem)
   };
 
   const [showModalEditItem, setShowModalEditItem] = useState(false);
 
   const openModalEditItem = () => {
     setShowModalEditItem(true);
-    console.log(showModalEditItem)
+     //console.log(showModalEditItem)
   };
 
   const closeModalEditItem = () => {
     setShowModalEditItem(false);
-    console.log(showModalEditItem)
+     //console.log(showModalEditItem)
   };
 
   const getToken = () => {
@@ -72,31 +95,7 @@ export default function Home() {
     }
   }
 
-  const checkAuth = async () => {
-    const tokens = getToken();
-    console.log("checkAuth: ", tokens)
 
-    if (tokens) {
-      const res = await fetch("/api/me/", {
-        headers: {
-          "Authorization": `Bearer ${tokens.access}`
-        }
-      });
-
-      if (res.ok) {
-
-        setisAuth(true);
-        console.log("User is authenticated", isAuth)
-      } else {
-        setisAuth(false);
-        console.log("User is not authenticated")
-      }
-      return tokens
-    } else {
-      console.error("Tokens or access token is undefined");
-      return
-    }
-  };
 
 
   const [isHoveredOnSaleFilter, setIsHoveredOnSaleFilter] = useState(false);
@@ -133,9 +132,8 @@ export default function Home() {
   const editItem = async (item) => {
     setItemToEdit(item)
     openModalEditItem();
-    checkAuth();
     const tokens = getToken();
-    console.log("item is : ", item)
+     //console.log("Item to editis : ", item)
   };
 
   const myItemsFilterstyles = {
@@ -188,12 +186,11 @@ export default function Home() {
   // @ts-ignore
 
   useEffect(() => {
-    checkAuth();
     const tokens = getToken();
 
     const fetchData = async () => {
       try {
-        const response = await fetch("/api/my_items/", {
+        const response = await fetch("/api/my-items/", {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -203,10 +200,10 @@ export default function Home() {
         });
 
         const data = await response.json();
-        console.log(typeof data.items); // Using typeof for a quick check
-        console.log(Object.keys(data.items).length);
+         //console.log(typeof data.items); // Using typeof for a quick check
+         //console.log(Object.keys(data.items).length);
         setItems(data.items.not_sold);
-        console.log(data.items.not_sold)
+         //console.log(data.items.not_sold)
         if (soldFilter) {
           setItems(data.items.sold);
         } else if (onSaleFilter) {
@@ -215,10 +212,10 @@ export default function Home() {
           setItems(data.items.purchased);
         } else {
           // Handle the case where none of the filters is true
-          console.error("No valid filter is true.");
+           console.error("No valid filter is true.");
         }
       } catch (error) {
-        console.error('Error fetching items:', error);
+         console.error('Error fetching items:', error);
       }
     };
 
@@ -230,7 +227,7 @@ export default function Home() {
     try {
       const tokens = getToken();
 
-      const response = await fetch('/api/my_items/', {
+      const response = await fetch('/api/my-items/', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -238,12 +235,12 @@ export default function Home() {
         },
 
         body: JSON.stringify({
-          item: item,
+          item_id: item.id,
         }),
       });
 
       const data = await response.json();
-      console.log("Response for deleting item is : ", response);
+       //console.log("Response for deleting item is : ", response);
 
 
       if (response.ok) {
@@ -256,7 +253,7 @@ export default function Home() {
       }
 
     } catch (error) {
-      console.error('Not authenticated', error);
+       console.error('Not authenticated', error);
 
     }
   };
@@ -265,98 +262,104 @@ export default function Home() {
 
   return (
     <div>
-      <UserMenuBar />
-      <NvBar cartCount={ItemCartCount} setCartCount={setItemCartCount} />
+      {isAuth ? (<>
+        <UserMenuBar />
+        <NvBar cartCount={ItemCartCount} setCartCount={setItemCartCount} />
 
-      {flashMessage && (
-        <FlashMessage
-          message={flashMessage.message}
-          type={flashMessage.type}
-          onClose={closeFlashMessage}
-        />
-      )}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        margin: "5px",
-        marginBottom: "40px",
-        width: '98%',
-      }}>
+        {flashMessage && (
+          <FlashMessage
+            message={flashMessage.message}
+            type={flashMessage.type}
+            onClose={closeFlashMessage}
+          />
+        )}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: "5px",
+          marginBottom: "40px",
+          width: '98%',
+        }}>
 
-        <div style={myItemsFilterstyles.myItemsFilterMenuCtn}>
-          <div
-            // @ts-ignore
-            style={{
-              ...myItemsFilterstyles.myItemsFilterMenu,
-              ...myItemsFilterstyles.myItemsFilterMenu0,
-              ...(isHoveredOnSaleFilter && myItemsFilterstyles.myItemsFilterMenuHover),
+          <div style={myItemsFilterstyles.myItemsFilterMenuCtn}>
+            <div
+              // @ts-ignore
+              style={{
+                ...myItemsFilterstyles.myItemsFilterMenu,
+                ...myItemsFilterstyles.myItemsFilterMenu0,
+                ...(isHoveredOnSaleFilter && myItemsFilterstyles.myItemsFilterMenuHover),
 
-            }}
-            onMouseEnter={() => setIsHoveredOnSaleFilter(true)}
-            onMouseLeave={() => setIsHoveredOnSaleFilter(false)}
-            onClick={() => FilterItems('onSale')}
-          >
-            On sale
+              }}
+              onMouseEnter={() => setIsHoveredOnSaleFilter(true)}
+              onMouseLeave={() => setIsHoveredOnSaleFilter(false)}
+              onClick={() => FilterItems('onSale')}
+            >
+              On sale
+            </div>
+            <div
+              // @ts-ignore
+              style={{
+                ...myItemsFilterstyles.myItemsFilterMenu,
+                ...myItemsFilterstyles.myItemsFilterMenu1,
+                ...(isHoveredSoldFilter && myItemsFilterstyles.myItemsFilterMenuHover),
+              }}
+              onMouseEnter={() => setIsHoveredSoldFilter(true)}
+              onMouseLeave={() => setIsHoveredSoldFilter(false)}
+              onClick={() => FilterItems('Sold')}
+            >
+              Sold
+            </div>
+            <div
+              // @ts-ignore
+              style={{
+                ...myItemsFilterstyles.myItemsFilterMenu,
+                ...myItemsFilterstyles.myItemsFilterMenu2,
+                ...(isHoveredPurchasedFilter && myItemsFilterstyles.myItemsFilterMenuHover),
+              }}
+              onMouseEnter={() => setIsHoveredPurchasedFilter(true)}
+              onMouseLeave={() => setIsHoveredPurchasedFilter(false)}
+              onClick={() => FilterItems('Purchased')}
+            >
+              Purchased
+            </div>
           </div>
-          <div
-            // @ts-ignore
-            style={{
-              ...myItemsFilterstyles.myItemsFilterMenu,
-              ...myItemsFilterstyles.myItemsFilterMenu1,
-              ...(isHoveredSoldFilter && myItemsFilterstyles.myItemsFilterMenuHover),
-            }}
-            onMouseEnter={() => setIsHoveredSoldFilter(true)}
-            onMouseLeave={() => setIsHoveredSoldFilter(false)}
-            onClick={() => FilterItems('Sold')}
-          >
-            Sold
-          </div>
-          <div
-            // @ts-ignore
-            style={{
-              ...myItemsFilterstyles.myItemsFilterMenu,
-              ...myItemsFilterstyles.myItemsFilterMenu2,
-              ...(isHoveredPurchasedFilter && myItemsFilterstyles.myItemsFilterMenuHover),
-            }}
-            onMouseEnter={() => setIsHoveredPurchasedFilter(true)}
-            onMouseLeave={() => setIsHoveredPurchasedFilter(false)}
-            onClick={() => FilterItems('Purchased')}
-          >
-            Purchased
-          </div>
+
         </div>
 
-      </div>
+        {itemToEdit ? (<ItemEditModal item={itemToEdit} show={showModalEditItem} onHide={closeModalEditItem} setItems={setItems} />) : <div></div>}
 
-      {itemToEdit ? (<ItemEditModal item={itemToEdit} show={showModalEditItem} onHide={closeModalEditItem} setItems={setItems} />) : <div></div>}
+        {onSaleFilter ? (<div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          alignItems: 'center',
+          color: 'white',
+        }}>
+          <ItemModal show={showModalAddItem} onHide={closeModalNewItem} setItems={setItems} items={items} />
+          <Button variant="secondary" onClick={openModalNewItem} className="mb-1" style={{ border: "none", width: "150px" }}>
+            New Item <IoIosAddCircleOutline />
+          </Button>
+        </div>) : <div></div>}
 
-      {onSaleFilter ? (<div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-        alignItems: 'center',
-        color: 'white',
-      }}>
-        <Button variant="secondary" onClick={openModalNewItem} className="mb-4" style={{ border: "none", width: "200px" }}>
-          New Item <IoIosAddCircleOutline />
-        </Button>
-      </div>) : <div></div>}
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          alignItems: 'center',
+          margin: '20px',
+        }}>
+          <ItemContainer items={items} itemFunction={editItem} DeleteIemFunction={deleteItem} filter={onSaleFilter} />
+        </div>
 
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-        alignItems: 'center',
-        margin: '20px',
-      }}>
-        <ItemContainer items={items} itemFunction={editItem} DeleteIemFunction={deleteItem} filter={onSaleFilter} />
-      </div>
+
+      </>) : (
+        <>
+          <div> {unAuthenticatedComponent} </div>
+        </>
+      )}
     </div>
-
-
-
 
 
   );

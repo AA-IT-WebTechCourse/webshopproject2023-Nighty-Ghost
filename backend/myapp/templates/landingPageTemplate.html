@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Landing Page</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Your custom CSS file -->
+    <link href="styles.css" rel="stylesheet">
+    <!-- Flash message styles -->
+    <link href="flash-message.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="container p-3 my-5 d-flex flex-column w-50">
+
+        <!-- Flash message container -->
+        <div id="flash-message" class="alert" style="display: none;"></div>
+
+        <div class="card bg-white my-5 mx-auto"
+            style="border-radius: 1rem; max-width: 500px; box-shadow: 2px 2px 13px 13px #D3D3D3;">
+            <div class="card-body p-5 w-100 d-flex flex-column">
+
+                <div>
+
+                    <div class="mb-4">
+                        <a href="http://localhost:8080/">
+                            <button class="btn btn-dark mb-4"
+                                style="border: none; width: 200px;background-color: #000000">Shop</button>
+                        </a>
+                    </div>
+
+                    <div class="mb-4">
+                        <a href="http://localhost:8080/login">
+                            <button class="btn btn-dark mb-4"
+                                style="border: none; width: 200px; background-color: #000000">Login</button>
+                        </a>
+                    </div>
+
+                    <div class="mb-4">
+                        <a href="http://localhost:8080/signup">
+                            <button class="btn btn-dark mb-4"
+                                style="border: none; width: 200px;background-color: #000000">Sign up</button>
+                        </a>
+                    </div>
+
+                    <div>
+                        <button class="btn btn-dark mb-4" onclick="populateDatabase()"
+                            style="border: none; width: 200px;background-color: #000000">Populate Database</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!-- Your custom JavaScript file -->
+    <script src="script.js"></script>
+
+    <script>
+        async function populateDatabase() {
+            try {
+                const response = await fetch('api/populate_db/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'  // Add CSRF token for CSRF protection
+                    }
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    // Show success message
+                    showFlashMessage(data.message, 'success');
+                } else {
+                    // Show error message
+                    showFlashMessage(data.error, 'error');
+                }
+            } catch (error) {
+                // Handle fetch error
+                console.error('Error:', error);
+                showFlashMessage('An error occurred while populating the database', 'error');
+            }
+        }
+
+        function showFlashMessage(message, type) {
+            const flashMessage = document.getElementById('flash-message');
+            flashMessage.textContent = message;
+            flashMessage.className = `alert alert-${type}`;
+            flashMessage.style.display = 'block';
+
+            // Hide the message after 3 seconds
+            setTimeout(() => {
+                flashMessage.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+
+</body>
+
+</html>

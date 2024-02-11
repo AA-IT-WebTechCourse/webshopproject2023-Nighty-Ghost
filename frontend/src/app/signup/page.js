@@ -13,9 +13,9 @@ export default function Log_Register() {
 
   return (
     <div>
-        
-        <Reg/>
- 
+
+      <Reg />
+
     </div>
   );
 }

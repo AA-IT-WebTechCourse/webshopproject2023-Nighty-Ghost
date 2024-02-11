@@ -10,7 +10,7 @@ const FlashMessage = ({ message, type, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsVisible(false);
-      console.log("SETVISIBLE NONE")
+       //console.log("SETVISIBLE NONE")
       onClose();
     }, 5000); 
 

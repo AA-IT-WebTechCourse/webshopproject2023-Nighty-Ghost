@@ -16,8 +16,8 @@ import { useEffect, useState } from "react";
 export default function Log_Register() {
 
   return (
-    <div>       
-        <Login_Reg/>
+    <div>
+      <Login_Reg />
     </div>
   );
 }
