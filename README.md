@@ -18,8 +18,29 @@ All requirements have been implemented
 OS: Windows
 Navigator: Google
 
-#Install requirements.txt
+## Install requirements.txt
+In `backend` folder (or project root folder), 
+```bash
 pip install -r requirements.txt
+```
 
-#Run
-Run both `backend` and `frontend`
+## Install NPM Modules
+In `frontend` folder
+
+```sh
+npm install
+npm run build
+```
+
+## RUN PROJECT
+In backend folder:
+```bash
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+python manage.py runserver    
+```
+In frontend folder:
+```bash
+npm start  
+```
