@@ -29,18 +29,29 @@ In `frontend` folder
 
 ```sh
 npm install
+```
+## Install NPM Modules
+In `frontend` folder, create a build folder 
+```sh
 npm run build
 ```
+
+
 
 ## RUN PROJECT
 In backend folder:
 ```bash
 pip install -r requirements.txt
 python manage.py migrate
-python manage.py runserver
-python manage.py runserver    
+python manage.py runserver   
 ```
 In frontend folder:
 ```bash
 npm start  
 ```
+
+## Landing Page 
+http://127.0.0.1:8000/
+
+## Shop Page
+http://localhost:8080 
