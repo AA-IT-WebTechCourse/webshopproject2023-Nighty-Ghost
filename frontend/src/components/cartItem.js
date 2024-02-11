@@ -10,7 +10,6 @@ function displayNotification(id, msg) {
   const element = document.getElementById(id);
   if (element) {
 
-
     element.innerHTML = msg;
     element.style.display = "block";
 
@@ -115,10 +114,8 @@ const ContainerCart = ({ setItemCartCount, itemCart }) => {
               cartItem.id === returnedItem.id
                 ? {
                   ...cartItem,
-                  added_item: {
-                    ...cartItem.added_item,
-                    price: returnedItem.price,
-                  },
+                  price: returnedItem.price,
+
                 }
                 : cartItem
             )

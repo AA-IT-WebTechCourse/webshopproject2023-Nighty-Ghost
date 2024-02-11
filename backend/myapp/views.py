@@ -289,12 +289,12 @@ class SearchItemView(APIView):
                     #Search by title
                     query |= Q(title__icontains=term)
 
-                items = Item.objects.filter(query)
+                items = Item.objects.filter(query, is_sold=False)
                 #print("Search terms\n")
                 #print("- Lenght : ", len(items))
                 #print('- Item : ', items)
             else:
-                items = Item.objects.all()
+                items = Item.objects.filter(is_sold=False)
 
             serialized_items = ItemSerializer(items, many=True).data
             for item in serialized_items:
@@ -584,20 +584,20 @@ class ValidateCartView(viewsets.ModelViewSet):
                     #Transaction halted
                 
                     #print("[DEBUG SERIALIZER ITEM]\n", serialized_item)
-                    failed_purchases.append({"msg": "Price initially " + str(product_price) + " € has been updated by seller", 
+                    failed_purchases.append({"msg": "Item Price initially " + str(product_price) + " € has been updated by seller.", 
                                             "Item" : serialized_item, 
                                             "error_type" : "price"})
             else:
                 #ITEM DOES NOT EXIST IN USER'S CART
                 #For API
-                error_msg = 'Failed cart validation : Item with id ' + str(product_id) + ' does not exist in your cart'
+                error_msg = ' Item with id ' + str(product_id) + ' does not exist in database'
                                 #Especially when request sent from API
                 failed_purchases.append({"msg": error_msg, 
                                         "Item" : serialized_item, 
-                                        "error_type" : "does not exist in user's cart"})
+                                        "error_type" : "sold/deleted"})
 
         if len(failed_purchases) == 0:
-            #Save successful when there no fail
+            #Save successful_pruchases when there is no fail
             for purchase in successful_purchases:
                 purchase.save()
                 #print('\nA purchase is :\n-->', purchase)
